@@ -1,0 +1,4 @@
+# Keep Linux line endings in the repository (scripts run on RHEL ppc64le)
+* text=auto eol=lf
+*.docx binary
+*.png binary
