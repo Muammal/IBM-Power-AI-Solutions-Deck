@@ -1,0 +1,19 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# MADLAD-400 (T5 architecture) on CPU with PyTorch bf16; LoRA fine-tuning with PEFT.
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1
+numpy==2.4.1+ppc64le1
+sentencepiece==0.2.0+ppc64le1
+protobuf==7.34.1
+accelerate==1.10.1
+peft==0.17.1
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

@@ -1,0 +1,33 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# ^ IBM's Power-optimized wheels: the dated snapshot used by the ppc64le/pyeco
+#   v2026.03.31 Python3.12 examples. Packages with a "+ppc64le" suffix come from it,
+#   everything else comes from PyPI. Target: RHEL 9, ppc64le, Python 3.12.
+#   Keep the "/+simple/" suffix: the index is a devpi server, and without it pip can
+#   receive the human web page instead of the package list ("from versions: none").
+#   Pins follow pyeco's Granite-with-pytorch-example and vllm-example requirements.
+
+# --- Model runtime (transformers backend) ---
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1          # faster Hugging Face downloads
+numpy==2.4.1+ppc64le1
+sentencepiece==0.2.0+ppc64le1   # ALLaM ships only a SentencePiece tokenizer.model
+protobuf==7.34.1                # used when converting SentencePiece to a fast tokenizer
+
+# --- Web UI (FastAPI + one HTML page) ---
+fastapi==0.135.2
+starlette==0.52.1
+pydantic==2.12.5
+pydantic-core==2.41.5
+uvicorn==0.42.0
+
+# --- Config ---
+PyYAML==6.0.3+ppc64le1
+python-dotenv==1.2.2
+
+# The optional llama.cpp backend (llama-cpp-python) is NOT listed here: it is compiled
+# on the LPAR in Step 09 so it picks up the Power10 MMA kernels.

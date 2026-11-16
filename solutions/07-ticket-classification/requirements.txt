@@ -1,0 +1,18 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Training: PyTorch on CPU. Serving: ONNX Runtime (MLAS kernels with POWER10 MMA), IBM ppc64le wheels.
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1
+numpy==2.4.1+ppc64le1
+onnx==1.19.1+ppc64le1
+onnxruntime==1.23.1+ppc64le1
+scikit-learn==1.7.0+ppc64le1
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

@@ -1,0 +1,16 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# LoRA fine-tuning of Granite 4.2 on CPU (common/python/lora_sft.py). Used by Solutions 01, 03, 09.
+# Install into its own venv:  common/scripts/make_venv.sh common/requirements-finetune.txt /opt/venv-finetune
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1
+numpy==2.4.1+ppc64le1
+sentencepiece==0.2.0+ppc64le1
+accelerate==1.10.1
+peft==0.17.1
+PyYAML==6.0.3+ppc64le1
+protobuf==7.34.1

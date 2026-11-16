@@ -1,0 +1,41 @@
+# Python
+venv/
+venv-*/
+__pycache__/
+*.pyc
+.env
+
+# Models, outputs, indexes (large or derived)
+models/
+out/
+index/
+results/
+*.gguf
+*.bin
+*.onnx
+*.safetensors
+*.pt
+
+# Generated or private data (keep the small samples that are tracked)
+solutions/02-enterprise-rag/data/pairs*.jsonl
+solutions/03-document-intelligence/data/reviewed/
+solutions/03-document-intelligence/data/sft_*.jsonl
+solutions/04-speech-analytics/data/calls/
+solutions/04-speech-analytics/data/asr/
+solutions/05-time-series-forecasting/data/substation_load.csv
+solutions/06-fraud-anomaly-detection/data/transactions.csv
+solutions/06-fraud-anomaly-detection/data/feedback.csv
+solutions/07-ticket-classification/data/unlabeled.csv
+solutions/07-ticket-classification/data/llm_labeled.csv
+solutions/09-it-ops-agent/data/*.jsonl
+solutions/09-it-ops-agent/data/good_runs.txt
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*.docx
+
+# Local tooling
+.claude/

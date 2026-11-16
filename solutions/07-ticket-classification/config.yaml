@@ -1,0 +1,39 @@
+# Solution 07 — Customer ticket classification & sentiment (Arabic / Iraqi dialect / English).
+
+labels:
+  category: [billing, network_outage, technical_support, account, complaint, sales, other]
+  sentiment: [positive, neutral, negative]
+
+routing:                      # category -> team queue (edit to your org)
+  billing: finance-desk
+  network_outage: noc
+  technical_support: tier1-support
+  account: customer-care
+  complaint: quality-team
+  sales: sales-team
+  other: customer-care
+
+data:
+  labeled_csv: data/tickets_sample.csv      # text,category,sentiment (human labels)
+  unlabeled_csv: data/unlabeled.csv         # text            (for LLM bootstrap labelling)
+  llm_labeled_csv: data/llm_labeled.csv
+  test_fraction: 0.2
+
+model:
+  base: ibm-granite/granite-embedding-278m-multilingual   # XLM-R encoder, Apache-2.0, Arabic
+  out_dir: out/classifier
+  onnx: out/classifier/model.onnx
+  max_length: 192
+  epochs: 4
+  learning_rate: 3.0e-5
+  batch_size: 16
+
+llm:
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}        # Granite 4.2 for zero-shot bootstrap labels
+
+runtime:
+  threads: 0
+
+server:
+  host: 127.0.0.1
+  port: 8007

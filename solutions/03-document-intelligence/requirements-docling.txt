@@ -1,0 +1,7 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux/+simple/
+--prefer-binary
+# OPTIONAL: Docling (layout analysis, table structure, reading order) on top of the core path.
+# Uses IBM's ROLLING index: Docling needs docling-parse 7.x, which is not in the 2026.03.31 snapshot.
+# Install into a separate venv:  ../../common/scripts/make_venv.sh requirements-docling.txt venv-docling
+-r requirements.txt
+docling==2.150.1

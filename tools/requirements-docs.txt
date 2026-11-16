@@ -1,0 +1,2 @@
+# Only for regenerating the .docx files (run on any laptop; not needed on the Power LPAR).
+pypandoc_binary==1.15

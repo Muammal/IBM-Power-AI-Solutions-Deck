@@ -1,0 +1,33 @@
+# systemd template: one llama-server per model, e.g. llama-server@granite-8b.service
+# The instance name (%i) selects /etc/llama-server/%i.env, which sets GGUF and PORT:
+#     GGUF=/opt/models/granite-4.2-8b-Q4_0.gguf
+#     PORT=8080
+#     CTX=16384
+#     NUMA_NODE=0        (optional)
+# Install:
+#   sudo useradd -r -s /sbin/nologin ai || true
+#   sudo mkdir -p /etc/llama-server && sudo cp common/deploy/granite-8b.env.example /etc/llama-server/granite-8b.env
+#   sudo cp common/deploy/llama-server@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now llama-server@granite-8b
+[Unit]
+Description=llama-server (%i) on IBM Power, CPU + MMA
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ai
+Group=ai
+EnvironmentFile=/etc/llama-server/%i.env
+ExecStart=/opt/ibm-power-ai-solutions/common/scripts/run_llama_server.sh ${GGUF} ${PORT} ${CTX}
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

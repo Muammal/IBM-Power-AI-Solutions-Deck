@@ -1,0 +1,22 @@
+# Solution 04 — Speech analytics for Arabic call centers. Edit this file, not the code.
+
+asr:
+  url: ${ASR_URL:-http://127.0.0.1:8090}   # whisper-server (whisper.cpp) started by scripts/run_whisper_server.sh
+  language: ar                             # ar | en | auto. Iraqi dialect is transcribed as Arabic
+  max_seconds: 3600                        # reject longer uploads
+
+llm:
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}   # Granite 4.2-8B
+  temperature: 0.1
+  max_tokens: 800
+
+redaction:
+  enabled: true              # mask phone numbers, card numbers and IBAN-like strings in stored transcripts
+
+storage:
+  dir: data/calls            # transcript + analytics JSON per call
+  retention_days: 90         # scripts/purge_old_calls.sh deletes older files (set your legal requirement)
+
+server:
+  host: 127.0.0.1
+  port: 8004

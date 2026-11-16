@@ -1,0 +1,9 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# The agent is plain Python + httpx: the LLM runs in llama-server (Granite 4.2, Power10 MMA kernels).
+# LoRA fine-tuning uses common/requirements-finetune.txt in its own venv.
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

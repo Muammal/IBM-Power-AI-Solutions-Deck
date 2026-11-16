@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "vendor_name": {"type": "string"},
+    "vendor_tax_id": {"type": ["string", "null"]},
+    "buyer_name": {"type": ["string", "null"]},
+    "invoice_number": {"type": "string"},
+    "invoice_date": {"type": "string", "description": "YYYY-MM-DD"},
+    "currency": {"type": "string", "description": "ISO code: IQD, USD or EUR"},
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {"type": "string"},
+          "quantity": {"type": "number"},
+          "unit_price": {"type": "number"},
+          "amount": {"type": "number"}
+        },
+        "required": ["description", "quantity", "unit_price", "amount"]
+      }
+    },
+    "subtotal": {"type": ["number", "null"]},
+    "tax": {"type": ["number", "null"]},
+    "total": {"type": "number"}
+  },
+  "required": ["vendor_name", "invoice_number", "invoice_date", "currency", "line_items", "total"]
+}

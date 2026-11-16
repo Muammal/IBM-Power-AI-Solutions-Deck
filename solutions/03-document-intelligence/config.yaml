@@ -1,0 +1,23 @@
+# Solution 03 — Document intelligence (OCR + structured extraction). Edit this file, not the code.
+
+llm:
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}
+  # Granite 4.2-3B is enough for field extraction and ~2.5x faster than 8B on CPU.
+  # Run a second llama-server on :8081 with granite-4.2-3b-Q8_0.gguf and set LLM_URL accordingly.
+  temperature: 0.0
+  max_tokens: 2000
+
+converter:
+  engine: auto               # auto = docling if installed, else poppler + tesseract | docling | basic
+  ocr_languages: [ara, eng]  # Tesseract language packs (Kurdish Sorani: add "ckb" if the pack is installed)
+  ocr_dpi: 300
+
+document_type: invoice       # schema file: schemas/<document_type>.json
+
+validation:
+  amount_tolerance: 0.02     # 2% tolerance for line items vs subtotal vs total
+  currencies: [IQD, USD, EUR]
+
+server:
+  host: 127.0.0.1
+  port: 8003

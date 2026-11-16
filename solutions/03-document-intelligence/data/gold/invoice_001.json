@@ -1,0 +1,16 @@
+{
+  "vendor_name": "شركة الرافدين للتجهيزات المكتبية",
+  "vendor_tax_id": "45782136",
+  "buyer_name": "مصرف النخيل التجاري",
+  "invoice_number": "INV-2026-0147",
+  "invoice_date": "2026-10-12",
+  "currency": "IQD",
+  "line_items": [
+    {"description": "ورق طباعة A4 (كرتون)", "quantity": 10, "unit_price": 35000, "amount": 350000},
+    {"description": "حبر طابعة ليزر", "quantity": 4, "unit_price": 95000, "amount": 380000},
+    {"description": "كرسي مكتب", "quantity": 2, "unit_price": 175000, "amount": 350000}
+  ],
+  "subtotal": 1080000,
+  "tax": 0,
+  "total": 1080000
+}

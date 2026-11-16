@@ -1,0 +1,32 @@
+# Solution 06 — Transaction fraud & anomaly detection. Edit this file, not the code.
+
+data:
+  transactions_csv: data/transactions.csv      # created by data/make_transactions.py; replace with your export
+  feedback_csv: data/feedback.csv              # analyst decisions: txn_id,label (1 fraud, 0 legitimate)
+  test_fraction: 0.2                           # the most recent 20% (time-based split, never random)
+
+model:
+  dir: out/model
+  xgboost:
+    n_estimators: 600
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    tree_method: hist          # fast CPU histogram algorithm
+  isolation_forest: true       # unsupervised anomaly score added as a feature (catches new patterns)
+
+decision:
+  alert_rate: 0.005            # share of transactions analysts can review; sets the "review" threshold
+  block_probability: 0.90      # above this: block and call the customer
+
+llm:
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}  # Granite 4.2 writes the analyst explanation (optional)
+  enabled: true
+
+runtime:
+  threads: 0
+
+server:
+  host: 127.0.0.1
+  port: 8006

@@ -1,0 +1,31 @@
+# systemd template that runs a solution's API: ai-app@02-enterprise-rag.service runs
+#   /opt/ibm-power-ai-solutions/solutions/02-enterprise-rag/scripts/serve.sh
+# with that solution's venv. Settings come from solutions/<name>/.env (optional).
+# Install:
+#   sudo cp common/deploy/ai-app@.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now ai-app@02-enterprise-rag
+[Unit]
+Description=IBM Power AI solution API (%i)
+After=network-online.target llama-server@granite-8b.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ai
+Group=ai
+WorkingDirectory=/opt/ibm-power-ai-solutions/solutions/%i
+EnvironmentFile=-/opt/ibm-power-ai-solutions/solutions/%i/.env
+Environment=HF_HOME=/var/lib/ai/hf-cache
+# Models are downloaded during setup; never call huggingface.co at start-up.
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/opt/ibm-power-ai-solutions/solutions/%i/scripts/serve.sh
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=600
+StateDirectory=ai
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

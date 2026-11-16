@@ -1,0 +1,41 @@
+# systemd unit: runs the chatbot from the venv in /opt/power-chatbot as the "chatbot" user.
+# Install:  sudo cp deploy/chatbot.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#           sudo systemctl enable --now chatbot
+# See docs/steps/10_deploy.md for creating the user and pre-downloading the model.
+
+[Unit]
+Description=Power chatbot (FastAPI web UI + LLM on CPU)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=chatbot
+Group=chatbot
+WorkingDirectory=/opt/power-chatbot
+# HF_TOKEN and other settings ("-" = do not fail if the file is missing)
+EnvironmentFile=-/opt/power-chatbot/.env
+# Models live in /var/lib/chatbot (created by StateDirectory below, owned by the chatbot user).
+Environment=HF_HOME=/var/lib/chatbot/hf-cache
+# The model is pre-downloaded, so never contact huggingface.co at start-up.
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/opt/power-chatbot/venv/bin/python app.py
+Restart=on-failure
+RestartSec=10
+# Loading a 7B model can take minutes on a cold page cache.
+TimeoutStartSec=600
+
+# --- Hardening: the service can read the app and write only its state directory ---
+StateDirectory=chatbot
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# Large models need lots of memory maps; leave limits generous.
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

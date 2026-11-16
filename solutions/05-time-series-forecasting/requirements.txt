@@ -1,0 +1,21 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Granite TimeSeries (TTM-R2) on CPU. granite-tsfm 0.3.12 needs torch 2.10-2.11 and transformers >= 4.57.6:
+# exactly IBM's dated-snapshot stack.
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1
+numpy==2.4.1+ppc64le1
+pandas==2.3.3+ppc64le1
+scikit-learn==1.7.0+ppc64le1
+scipy==1.17.0+ppc64le1
+pyarrow==21.0.0+ppc64le1
+accelerate==1.10.1
+granite-tsfm==0.3.12
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+PyYAML==6.0.3+ppc64le1

@@ -1,0 +1,40 @@
+# Solution 02 — Enterprise document Q&A (RAG). The only file you edit to change models or behaviour.
+# ${VAR:-default} values can be overridden with environment variables (or .env when run as a service).
+
+llm:
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}   # llama-server with Granite 4.2-8B (common/README.md C5)
+  temperature: 0.1
+  max_tokens: 900
+  thinking: false            # true = Granite 4.2 reasons first: better on hard questions, 2-5x slower on CPU
+
+embeddings:
+  model: ibm-granite/granite-embedding-278m-multilingual   # Apache-2.0, Arabic + English
+  # model: out/embed-finetuned                             # after finetune/finetune_embeddings.py
+  pooling: cls               # cls for Granite embedding; mean for most other encoders
+  max_length: 512
+  batch_size: 32
+  threads: 0                 # 0 = one per physical core
+
+corpus:
+  docs_dir: data/docs        # .md .txt .pdf .docx, any sub-folder
+  index_dir: index           # written by src/ingest.py
+  chunk_chars: 1200          # ~250-300 tokens of Arabic or English
+  overlap_chars: 200
+
+retrieval:
+  top_k: 5
+  min_score: 0.30            # chunks below this cosine score are dropped (tune with eval/eval_retrieval.py).
+                             # Measured on the samples: relevant ~0.76, off-topic ~0.5. The threshold only trims
+                             # noise; the prompt's "answer only from context" rule is what prevents invented answers.
+
+server:
+  host: 127.0.0.1
+  port: 8002
+
+prompts:
+  system: |
+    You answer questions using ONLY the numbered context passages from the company's documents.
+    Rules:
+    - Reply in the language of the question (Arabic, including Iraqi dialect, or English).
+    - Cite passages like [1] or [2][3] after the sentences they support.
+    - If the context does not contain the answer, say so plainly and suggest who to ask. Never invent policy.

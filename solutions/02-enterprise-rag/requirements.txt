@@ -1,0 +1,24 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# IBM Power-optimized wheels (dated snapshot used by ppc64le/pyeco v2026.03.31). Target: RHEL 9, ppc64le, Python 3.12.
+# "+ppc64le" builds come from IBM; pure-Python packages come from PyPI.
+
+# --- Embeddings + fine-tuning (PyTorch on CPU; bf16/fp32 GEMMs use OpenBLAS POWER10/MMA kernels) ---
+torch==2.10.0+ppc64le1
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.7.0
+huggingface-hub==0.36.2
+hf_xet==1.2.0+ppc64le1
+numpy==2.4.1+ppc64le1
+
+# --- Document loaders ---
+pypdf==7.1.0
+python-docx==1.2.0
+
+# --- API + LLM client ---
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

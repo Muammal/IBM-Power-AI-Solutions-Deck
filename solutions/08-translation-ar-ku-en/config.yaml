@@ -1,0 +1,27 @@
+# Solution 08 — Arabic / Kurdish (Sorani ckb, Kurmanji ku) / English translation.
+
+model:
+  id: google/madlad400-3b-mt          # Apache-2.0, 400+ languages incl. ar, ckb, ku
+  adapter: null                       # out/lora-madlad/adapter after finetune/lora_madlad.py
+  dtype: bfloat16                     # bf16 uses Power10 MMA; float32 for reference accuracy
+  max_new_tokens: 512
+  num_beams: 4
+
+languages:                            # code -> display name (MADLAD uses <2code> prefixes)
+  ar: Arabic
+  ckb: Kurdish (Sorani)
+  ku: Kurdish (Kurmanji)
+  en: English
+
+glossary_csv: data/glossary.csv       # term_en, term_ar, term_ckb, term_ku: required translations
+
+postedit:
+  enabled: false                      # Granite 4.2 fixes glossary terms / fluency (Arabic & English targets only)
+  base_url: ${LLM_URL:-http://127.0.0.1:8080/v1}
+
+runtime:
+  threads: 0
+
+server:
+  host: 127.0.0.1
+  port: 8008

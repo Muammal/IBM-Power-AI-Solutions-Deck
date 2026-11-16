@@ -1,0 +1,32 @@
+# Podman image for the chatbot on IBM Power (ppc64le). Build it ON the LPAR (native ppc64le):
+#   podman build -f deploy/Containerfile -t power-chatbot .
+# UBI 9 images are multi-arch, so this pulls the ppc64le variant automatically.
+# For production, pin the base image by digest (podman inspect --format '{{.Digest}}' ...).
+FROM registry.access.redhat.com/ubi9/python-312:latest
+
+# PIP_NO_CACHE_DIR: keep the 1+ GB torch wheel out of the image layers.
+# CHATBOT_HOST=0.0.0.0: listen on the container's interface (podman maps the port).
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONUNBUFFERED=1 \
+    HF_HOME=/opt/app-root/src/.cache/huggingface \
+    CHATBOT_HOST=0.0.0.0
+
+WORKDIR /opt/app-root/src
+
+# Dependencies first: this layer is reused as long as requirements.txt does not change.
+# requirements.txt already points pip at IBM's ppc64le wheel index.
+COPY requirements.txt .
+RUN pip install --only-binary=:all: -r requirements.txt
+
+# Application code. config.yaml is baked in as a default; mount your own over it to swap models.
+COPY llm.py app.py cli.py config.yaml ./
+COPY static/ static/
+
+# The ubi python images run as the unprivileged user 1001, which owns /opt/app-root/src.
+USER 1001
+EXPOSE 7860
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10m \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/health', timeout=4)"
+
+CMD ["python", "app.py"]

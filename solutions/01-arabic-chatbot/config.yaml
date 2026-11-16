@@ -1,0 +1,81 @@
+# ============================================================================
+# config.yaml: the ONLY file you edit to change model, backend or settings.
+# No Python code changes are needed to swap models (see docs/steps/11_swap_models.md).
+# ============================================================================
+
+# Which inference engine to use:
+#   transformers -> Hugging Face model (safetensors), PyTorch on CPU   [default]
+#   llamacpp     -> a GGUF file through llama-cpp-python (Step 09)
+backend: transformers
+
+# ---------------------------------------------------------------------------
+# Model presets. Exactly ONE "id:" line should be active (not commented).
+# Always confirm the exact ID on https://huggingface.co/<id> before use.
+# ---------------------------------------------------------------------------
+model:
+  # Default (since 2026-11-15). IBM Granite 4.2 (Aug 2026): Apache-2.0, not gated, Arabic is a tested language,
+  # reasoning + tool calling. 3B: ~7.3 GB bf16 (32 GB LPAR). 8B: ~17.6 GB bf16 (64 GB LPAR).
+  # Granite 4.2 "thinks" (<think>...</think>) by default; chat_template_kwargs below turns that off for chat.
+  id: ibm-granite/granite-4.2-3b
+  # id: ibm-granite/granite-4.2-8b
+
+  # Gated: accept the licence on Hugging Face and put HF_TOKEN in .env.
+  # Llama 3.x does NOT officially list Arabic among its supported languages, so
+  # test Arabic quality yourself before you rely on it.
+  # id: meta-llama/Llama-3.2-3B-Instruct
+
+  # Arabic supported. Licence: Qwen RESEARCH licence (non-commercial use only).
+  # id: Qwen/Qwen2.5-3B-Instruct
+
+  # Arabic supported. Licence: Apache-2.0. Needs ~64 GB RAM for float32, ~32 GB for bfloat16.
+  # id: Qwen/Qwen2.5-7B-Instruct
+
+  # Arabic-first model. Licence: Apache-2.0. The repo moved from ALLaM-AI/... to humain-ai/...
+  # (the old ID redirects). Its chat template does not allow two user messages in a row.
+  # id: humain-ai/ALLaM-7B-Instruct-preview
+
+  revision: main            # a branch, tag or commit hash. Pin a commit in production.
+  dtype: bfloat16           # bfloat16 (half the RAM, uses Power10 MMA) | float32 (most accurate)
+  trust_remote_code: false  # none of the presets need custom code. Keep this false.
+  # Extra variables passed to the model's chat template (transformers backend).
+  # Granite 4.2: enable_thinking: false = answer directly (fast on CPU). Other presets ignore unknown keys.
+  chat_template_kwargs:
+    enable_thinking: false
+
+# Only used when backend: llamacpp (see Step 09)
+llamacpp:
+  gguf_path: models/Llama-3.2-3B-Instruct-Q4_0.gguf
+  n_ctx: 4096               # context window in tokens
+  n_batch: 512              # prompt-processing batch size
+
+runtime:
+  threads: 0                # 0 = auto: one thread per physical core. Tune with Step 08.
+                            # (PyTorch's own default on POWER would be one per SMT thread.)
+
+generation:
+  max_new_tokens: 512
+  temperature: 0.7          # 0 = greedy (deterministic). Higher = more creative.
+  top_p: 0.9
+  repetition_penalty: 1.05
+  max_history_turns: 6      # user+assistant pairs kept. Longer history = slower on CPU.
+
+# The system prompt is picked from the language of the user's latest message:
+# Arabic script -> "ar", anything else -> "en". Both versions tell the model to
+# reply in the user's language.
+system_prompt:
+  en: |
+    You are a helpful, concise assistant.
+    Always reply in the same language as the user's last message:
+    if the user writes in Arabic (Modern Standard Arabic or a dialect such as Iraqi),
+    reply in clear Arabic; if the user writes in English, reply in English.
+    If you are not sure about a fact, say so instead of guessing.
+  ar: |
+    أنت مساعد مفيد وموجز.
+    أجب دائماً بنفس لغة آخر رسالة من المستخدم:
+    إذا كتب المستخدم بالعربية (الفصحى أو بلهجة مثل اللهجة العراقية) فأجب بعربية واضحة،
+    وإذا كتب بالإنجليزية فأجب بالإنجليزية.
+    إذا لم تكن متأكداً من معلومة فقل ذلك بدلاً من التخمين.
+
+server:
+  host: 127.0.0.1           # localhost only. Use an SSH tunnel (Step 07) or set CHATBOT_HOST=0.0.0.0
+  port: 7860

@@ -1,0 +1,11 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Core path: pdftotext / pdftoppm (poppler-utils) + Tesseract CLI (ara+eng) + Granite 4.2 on llama-server.
+# No torch needed. Optional Docling layout/table pipeline: requirements-docling.txt
+
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+python-multipart==0.0.33
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

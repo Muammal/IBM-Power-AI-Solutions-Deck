@@ -1,0 +1,29 @@
+# Solution 05 — Demand / load forecasting with IBM Granite TimeSeries TTM-R2. Edit this file, not the code.
+
+model:
+  id: ibm-granite/granite-timeseries-ttm-r2     # Apache-2.0, ~1M parameters per variant, CPU-friendly
+  context_length: 512        # hours of history the model reads (512 h ~ 3 weeks)
+  prediction_length: 96      # hours ahead it predicts (96 h = 4 days)
+  finetuned_path: out/ttm-finetuned             # written by finetune/finetune_ttm.py
+
+data:
+  csv: data/substation_load.csv                 # created by data/make_sample.py; replace with your export
+  timestamp_column: timestamp
+  id_columns: []             # e.g. [substation_id] to train one model on many series
+  target_columns: [load_mw]
+  control_columns: [temp_c]  # known-in-advance drivers (weather forecast, holidays) for fine-tuning
+  freq: h
+  split: {train: 0.7, test: 0.2}                # remainder is validation
+
+finetune:
+  epochs: 20
+  learning_rate: 0.001
+  batch_size: 64
+  use_exogenous: true        # learn how temperature drives load (channel mixing head)
+
+runtime:
+  threads: 0                 # 0 = one per physical core
+
+server:
+  host: 127.0.0.1
+  port: 8005

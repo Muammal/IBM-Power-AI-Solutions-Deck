@@ -1,0 +1,14 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Tabular ML on Power: XGBoost + scikit-learn from IBM's wheels (OpenBLAS POWER10 kernels underneath).
+xgboost==3.0.2+ppc64le1
+scikit-learn==1.7.0+ppc64le1
+scipy==1.17.0+ppc64le1
+pandas==2.3.3+ppc64le1
+numpy==2.4.1+ppc64le1
+joblib==1.5.2
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

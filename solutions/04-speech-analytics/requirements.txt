@@ -1,0 +1,12 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Inference path: whisper.cpp (built in common step C6) does the speech recognition; Python only decodes
+# audio (PyAV, IBM wheel), calls whisper-server and Granite 4.2, and serves the API. No torch here.
+av==15.1.0+ppc64le1
+numpy==2.4.1+ppc64le1
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+python-multipart==0.0.33
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ar" dir="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power Chatbot · مساعد</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --text:#1d2330; --muted:#69707d; --user:#0f62fe; --user-text:#fff;
+          --bot:#eef0f4; --border:#dcdfe5; --error:#da1e28; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14161a; --panel:#1c1f25; --text:#e6e8ec; --muted:#9aa1ad; --bot:#262a31; --border:#323741; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; height:100vh; display:flex; flex-direction:column; background:var(--bg); color:var(--text);
+         /* Arabic-capable system fonts first, so Arabic letters join correctly without web fonts */
+         font: 16px/1.6 system-ui, "Segoe UI", "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif; }
+  header { padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel);
+           display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0; }
+  #status { color:var(--muted); font-size:13px; }
+  #log { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px;
+         max-width:860px; width:100%; margin:0 auto; }
+  .msg { max-width:85%; padding:9px 13px; border-radius:12px; white-space:pre-wrap; word-wrap:break-word;
+         unicode-bidi:plaintext; /* each line takes its direction from its own first strong letter */ }
+  .user { align-self:flex-end; background:var(--user); color:var(--user-text); }
+  .assistant { align-self:flex-start; background:var(--bot); }
+  .pending:empty::after { content:"…"; color:var(--muted); }
+  .error { outline:2px solid var(--error); }
+  form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border); background:var(--panel);
+         max-width:860px; width:100%; margin:0 auto; }
+  textarea { flex:1; resize:none; min-height:46px; max-height:160px; padding:10px; font:inherit; color:inherit;
+             background:var(--bg); border:1px solid var(--border); border-radius:10px; unicode-bidi:plaintext; }
+  button { padding:0 16px; border:0; border-radius:10px; font:inherit; cursor:pointer; background:var(--user); color:#fff; }
+  button.secondary { background:var(--bot); color:var(--text); }
+  button:disabled { opacity:.5; cursor:default; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Power Chatbot · المساعد</h1>
+  <span id="status" dir="ltr">connecting…</span>
+</header>
+
+<main id="log" aria-live="polite"></main>
+
+<form id="form">
+  <!-- dir="auto": the box flips to right-to-left as soon as you type Arabic -->
+  <textarea id="input" dir="auto" rows="1" placeholder="اكتب سؤالك… / Type your question… (Enter = send, Shift+Enter = new line)" autofocus></textarea>
+  <button id="send" type="submit">إرسال · Send</button>
+  <button id="stop" type="button" class="secondary" hidden>إيقاف · Stop</button>
+  <button id="reset" type="button" class="secondary" title="New chat">جديد · New</button>
+</form>
+
+<script>
+const log = document.getElementById("log"), input = document.getElementById("input");
+const sendBtn = document.getElementById("send"), stopBtn = document.getElementById("stop");
+const history = [];          // the whole conversation lives in the browser; the server is stateless
+let controller = null;       // AbortController of the running request (for the Stop button)
+
+function addBubble(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  div.dir = "auto";          // Arabic bubbles render right-to-left, English left-to-right
+  div.textContent = text;    // textContent, never innerHTML: model output is not trusted HTML
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+function setBusy(busy) {
+  sendBtn.disabled = busy; stopBtn.hidden = !busy; input.disabled = busy;
+  if (!busy) input.focus();
+}
+
+async function send(text) {
+  history.push({ role: "user", content: text });
+  addBubble("user", text);
+  const bot = addBubble("assistant pending", "");
+  controller = new AbortController();
+  setBusy(true);
+  let answer = "";
+  try {
+    const res = await fetch("chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: history }), signal: controller.signal });
+    if (!res.ok) throw new Error(res.status + " " + (await res.text()));
+    const reader = res.body.getReader();
+    // stream:true keeps a multi-byte Arabic character that is split across two chunks intact
+    const decoder = new TextDecoder("utf-8");
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      answer += decoder.decode(value, { stream: true });
+      bot.textContent = answer;
+      log.scrollTop = log.scrollHeight;
+    }
+    answer += decoder.decode();
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      bot.classList.add("error");
+      bot.textContent = answer + "\n[error] " + err.message;
+    }
+  }
+  bot.classList.remove("pending");
+  if (answer) history.push({ role: "assistant", content: answer });
+  else history.pop();        // no answer: drop the question so user/assistant turns keep alternating
+  setBusy(false);
+}
+
+document.getElementById("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (text && !sendBtn.disabled) { input.value = ""; send(text); }
+});
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendBtn.click(); }
+});
+stopBtn.addEventListener("click", () => controller && controller.abort());
+document.getElementById("reset").addEventListener("click", () => {
+  if (controller) controller.abort();
+  history.length = 0; log.innerHTML = ""; input.focus();
+});
+
+fetch("health").then(r => r.json())
+  .then(h => { document.getElementById("status").textContent = h.model; })
+  .catch(() => { document.getElementById("status").textContent = "server not reachable"; });
+</script>
+</body>
+</html>

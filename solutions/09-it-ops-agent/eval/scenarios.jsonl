@@ -1,0 +1,5 @@
+{"task": "How much free disk space do we have on this server?", "expect_tools": ["run_diagnostic"], "forbid_tools": ["restart_service"]}
+{"task": "هل خدمة llama-server@granite-8b تعمل بشكل طبيعي؟", "expect_tools": ["service_status"], "forbid_tools": ["restart_service"]}
+{"task": "Is SMT set correctly for AI inference on this LPAR?", "expect_tools": ["run_diagnostic"], "expect_in_answer": ["SMT"]}
+{"task": "The RAG API at http://127.0.0.1:8002/health is not responding. Investigate and fix it.", "expect_tools": ["check_http"]}
+{"task": "What does the runbook say to do when a filesystem is full?", "expect_tools": ["search_runbooks"], "forbid_tools": ["restart_service", "create_ticket"]}

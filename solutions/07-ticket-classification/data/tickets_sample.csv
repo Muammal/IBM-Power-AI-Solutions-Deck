@@ -1,0 +1,41 @@
+text,category,sentiment
+الفاتورة هذا الشهر أعلى من المعتاد بكثير ولم أستخدم أي خدمة إضافية,billing,negative
+ليش انخصم مني رصيد وآني ما مشترك بأي باقة؟,billing,negative
+أرجو إرسال نسخة من فاتورة شهر تشرين الأول إلى بريدي,billing,neutral
+I was charged twice for the same top-up card,billing,negative
+Can you explain the new tax line on my invoice?,billing,neutral
+شكراً تم تعديل الفاتورة بسرعة,billing,positive
+الإنترنت مقطوع في منطقة الكرادة منذ الصباح,network_outage,negative
+ماكو شبكة نهائياً بالبصرة من البارحة,network_outage,negative
+No signal in Erbil city center since 3 hours,network_outage,negative
+هل هناك صيانة مجدولة لشبكة الألياف الضوئية هذا الأسبوع؟,network_outage,neutral
+عادت الخدمة بعد الانقطاع، شكراً لكم,network_outage,positive
+الراوتر يطفي ويشتغل كل شوية,technical_support,negative
+كيف أغير كلمة سر الواي فاي في الراوتر الجديد؟,technical_support,neutral
+My phone does not receive 4G after the update,technical_support,negative
+التطبيق لا يفتح على هاتفي ويظهر خطأ في الاتصال,technical_support,negative
+The technician fixed my line quickly. Great job,technical_support,positive
+أريد تغيير اسم صاحب الخط إلى اسم أخي,account,neutral
+نسيت الرقم السري لحسابي في التطبيق,account,neutral
+Please close my account at the end of this month,account,neutral
+أرجو تحديث عنواني إلى أربيل,account,neutral
+تم تفعيل حسابي بسهولة، ممتاز,account,positive
+الموظف في الفرع تعامل معي بطريقة غير محترمة,complaint,negative
+صار لي أسبوع أتصل ومحد يرد عليّ,complaint,negative
+I want to file a formal complaint about the delay in my refund,complaint,negative
+هذه ثالث مرة أشتكي من نفس المشكلة بدون حل,complaint,negative
+خدمة العملاء تأخرت لكن حلوا المشكلة بالنهاية,complaint,neutral
+عندكم عروض إنترنت منزلي بسرعة أعلى؟,sales,neutral
+أريد الاشتراك بباقة الشركات لعشرين موظف,sales,neutral
+What are the prices for the unlimited data package?,sales,neutral
+العرض الجديد ممتاز ومناسب للطلاب,sales,positive
+شنو أحسن باقة للألعاب أونلاين؟,sales,neutral
+متى ساعات دوام الفرع في النجف؟,other,neutral
+Do you have a branch in Kirkuk?,other,neutral
+شكراً على المساعدة,other,positive
+هل يمكنني الدفع عن طريق المحفظة الإلكترونية؟,billing,neutral
+الخط مقطوع والجهاز يقول لا توجد خدمة,network_outage,negative
+The router lights are red and nothing works,technical_support,negative
+أريد نقل الخط من اسم الشركة إلى اسمي الشخصي,account,neutral
+موظف الكول سنتر سكّر الخط بوجهي,complaint,negative
+هل يوجد خصم للعائلات على الباقات الشهرية؟,sales,neutral
