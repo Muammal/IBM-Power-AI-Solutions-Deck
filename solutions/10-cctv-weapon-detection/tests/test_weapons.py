@@ -81,6 +81,19 @@ def test_alert_needs_min_hits(cfg):
     assert len(evs) == 1 and evs[0]["label"] == "handgun" and len(rec.sent) == 1
 
 
+def test_window_confirmation_for_low_fps(cfg):
+    # frames 0.5 s apart in the fake camera; the gun jumps around (no box overlap), as at 0.5 fps with cuts
+    jump = [[PERSON, GUN], [Detection("person", 0.9, (400, 100, 500, 400)), Detection("handgun", 0.8, (480, 220, 520, 260))]]
+    store, _, _ = run(cfg, jump * 2)                       # box tracking: never 3 overlapping hits -> no alert
+    assert store.list() == []
+    cfg["alerting"].update(confirm="window", min_hits=2, window_s=6)
+    cfg["storage"]["db"] = cfg["storage"]["db"].replace("e.db", "w.db")
+    store, _, _ = run(cfg, jump * 2)
+    assert len(store.list()) == 1
+    store, _, _ = run(cfg, [[PERSON, GUN], [], [], [], [], [], [], [], [], [], [], [], [], [PERSON, GUN]])  # 6.5 s apart
+    assert len(store.list()) == 1                          # outside the window: no new alert
+
+
 def test_person_overlap_rule(cfg):
     store, _, _ = run(cfg, [[PERSON, GUN_FAR]] * 5)
     assert store.list() == []

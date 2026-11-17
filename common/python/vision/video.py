@@ -9,6 +9,7 @@ Design choices (each one fixes a failure seen in production video systems):
   * a short ring buffer of sampled frames is kept for evidence clips (pre-event seconds)
 """
 import collections
+import fractions
 import logging
 import threading
 import time
@@ -32,7 +33,7 @@ class CameraStream(threading.Thread):
         self.buffer = collections.deque(maxlen=max(1, int(buffer_seconds * self.fps)))
         self._stop = threading.Event()
         self.status = {"camera": cam_id, "connected": False, "last_frame_ts": None, "reconnects": 0,
-                       "frames_sampled": 0, "last_error": None, "finished": False}
+                       "frames_sampled": 0, "last_error": None, "finished": False, "media_seconds": 0.0}
 
     def stop(self):
         self._stop.set()
@@ -64,13 +65,16 @@ class CameraStream(threading.Thread):
                     self.status.update(connected=True, last_error=None)
                     backoff = 1.0
                     next_t = 0.0
+                    t0 = time.time()        # file replay: media time is mapped onto wall-clock time from here
                     for frame in container.decode(stream):
                         if self._stop.is_set():
                             return
                         if self.realtime:
                             now = time.time()
-                        else:  # file: use the media clock, so tests behave like a live camera
-                            now = float(frame.pts * stream.time_base) if frame.pts is not None else time.time()
+                        else:  # file: media clock (deterministic sampling), shifted to wall-clock dates
+                            media = float(frame.pts * stream.time_base) if frame.pts is not None else 0.0
+                            self.status["media_seconds"] = media
+                            now = t0 + media
                         if now < next_t:
                             continue
                         next_t = now + 1.0 / self.fps
@@ -81,7 +85,7 @@ class CameraStream(threading.Thread):
                         with self._lock:
                             self._latest, self._consumed = (now, rgb), False
                             self.buffer.append((now, rgb))
-                        self.status["last_frame_ts"] = now
+                        self.status["last_frame_ts"] = time.time()   # wall clock: "a frame arrived just now"
                         self.status["frames_sampled"] += 1
                 if not self.realtime:
                     self.status.update(finished=True, connected=False)
@@ -112,7 +116,9 @@ def write_clip(frames, path, fps):
         return None
     h, w = frames[0][1].shape[:2]
     with av.open(str(path), mode="w") as out:
-        st = out.add_stream("libx264" if "libx264" in av.codecs_available else "mpeg4", rate=max(1, int(round(fps))))
+        # Fractional rate: at 0.5 analysed fps a rounded rate of 1 would play the clip at double speed.
+        rate = fractions.Fraction(fps).limit_denominator(100)
+        st = out.add_stream("libx264" if "libx264" in av.codecs_available else "mpeg4", rate=rate)
         st.width, st.height, st.pix_fmt = w - w % 2, h - h % 2, "yuv420p"
         for _, rgb in frames:
             fr = av.VideoFrame.from_ndarray(rgb[: st.height, : st.width], format="rgb24")

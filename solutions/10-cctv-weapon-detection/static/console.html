@@ -41,9 +41,12 @@ let token = sessionStorage.getItem("token") || "";
 let seen = new Set();
 const H = () => ({ "Authorization": "Bearer " + token });
 function saveToken() { token = document.getElementById("token").value.trim(); sessionStorage.setItem("token", token); refresh(); }
+const imgCache = {};   // fetch each snapshot once: every fetch is an audited "view", refreshes must not repeat it
 async function img(id) {
+  if (imgCache[id]) return imgCache[id];
   const r = await fetch(`/api/events/${id}/snapshot`, { headers: H() });
-  return r.ok ? URL.createObjectURL(await r.blob()) : "";
+  if (!r.ok) return "";
+  return (imgCache[id] = URL.createObjectURL(await r.blob()));
 }
 async function review(id, verdict) {
   const note = verdict === "false_alarm" ? (prompt("سبب الإنذار الكاذب / Why false alarm? (optional)") || "") : "";

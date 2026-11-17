@@ -17,9 +17,9 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from app import CFG, build  # noqa: E402
+from app import CFG, build, effective_config, make_detector  # noqa: E402
 
-VIDEO = {".mp4", ".mkv", ".avi", ".mov", ".ts"}
+VIDEO = {".mp4", ".mkv", ".avi", ".mov", ".ts", ".webm"}
 
 
 class SilentNotifier:
@@ -29,12 +29,14 @@ class SilentNotifier:
 
 def run_file(path, cfg, detector):
     from vision.video import CameraStream
+    cfg = effective_config(cfg)
     cam = CameraStream("eval", str(path), fps=cfg["cameras"][0].get("fps", 2) if cfg["cameras"] else 2,
                        buffer_seconds=6, realtime=False)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:  # Windows: SQLite file may still be open
         c = copy.deepcopy(cfg)
         c["storage"]["db"], c["storage"]["media_dir"] = f"{tmp}/e.db", f"{tmp}/media"
         c["cameras"] = [{"id": "eval", "name": path.name, "fps": cam.fps}]
+        c["detector"]["backend"] = "onnx"   # thresholds already applied by effective_config above
         store, pipe = build(c, detector=detector, cameras={"eval": cam}, notifier=SilentNotifier(), start=False)
         cam.start()
         while cam.is_alive() or cam.latest() is not None:
@@ -43,8 +45,8 @@ def run_file(path, cfg, detector):
         while pipe.step():
             pass
         n_alerts = len(store.list(limit=100000))
-        last_ts = cam.status["last_frame_ts"] or 0
-    return n_alerts, last_ts / 3600.0
+        media_s = cam.status["media_seconds"] or 0
+    return n_alerts, media_s / 3600.0
 
 
 def main():
@@ -54,13 +56,13 @@ def main():
     ap.add_argument("--max-per-camera-hour", type=float)
     ap.add_argument("--min-recall", type=float)
     a = ap.parse_args()
-    from vision.detector import OnnxDetector
-    det = OnnxDetector(ROOT / CFG["detector"]["model"], threads=CFG["detector"]["threads"], min_score=CFG["detector"]["min_score"])
+    det = make_detector(effective_config(CFG))     # onnx or zero-shot, as configured
     alerts = hours = 0.0
     for f in sorted(p for p in pathlib.Path(a.negatives).rglob("*") if p.suffix.lower() in VIDEO):
+        t0 = time.time()
         n, h = run_file(f, CFG, det)
         alerts, hours = alerts + n, hours + h
-        print(f"negative {f.name}: {n} alerts in {h:.2f} h")
+        print(f"negative {f.name}: {n} alerts in {h * 60:.1f} min of video ({time.time() - t0:.0f} s to process)", flush=True)
     if hours <= 0:
         print("GATE FAILED: no negative footage was processed (check --negatives)")
         sys.exit(1)
@@ -69,7 +71,11 @@ def main():
     recall = None
     if a.positives:
         files = sorted(p for p in pathlib.Path(a.positives).rglob("*") if p.suffix.lower() in VIDEO)
-        caught = sum(run_file(f, CFG, det)[0] > 0 for f in files)
+        caught = 0
+        for f in files:
+            n, h = run_file(f, CFG, det)
+            caught += n > 0
+            print(f"positive {f.name}: {n} alerts in {h * 60:.1f} min of video", flush=True)
         recall = caught / max(1, len(files))
         print(f"STAGED WEAPONS: caught {caught}/{len(files)} = {recall:.2%}")
     ok = (a.max_per_camera_hour is None or rate <= a.max_per_camera_hour) and \

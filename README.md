@@ -126,7 +126,8 @@ Power10/Power11 hardware was **not available** while building this repo. What wa
 | Solution 07 | full run on x86 CPU | train → ONNX (parity error 1.6e-6) → int8 (278 MB vs 1110 MB) → ONNX Runtime API, ~0.1 s per ticket |
 | Solution 09 | agent loop with a scripted LLM stub | runbook tool call, approval denial, injected service name (`rm -rf /`) rejected by the allow-list, audit log written |
 | Solutions 03, 04, 08 helpers | unit checks on x86 | invoice validation on gold/bad data, Arabic-Indic digit normalisation, phone/card redaction, Arabic WER, chrF |
-| Solution 10 | `pytest` (8) + end-to-end run with the real ONNX detector on a test video | rules, hash chain, retention, escalation, auth pass; 0 false alarms on 30 s video; 108 ms/frame at 8 threads (x86) |
+| Solution 10 zero-shot | full pipeline on 8 public Wikimedia Commons videos + live service in the browser (2026-11-17) | 0 false alarms on 5.6 min of no-weapon footage; 3 of 5 firearms videos alerted; operator confirm, audit, integrity verified |
+| Solution 10 | `pytest` (9) + end-to-end run with the real ONNX detector on a test video | rules, hash chain, retention, escalation, auth pass; 0 false alarms on 30 s video; 108 ms/frame at 8 threads (x86) |
 | Shared RT-DETRv2 export | PyTorch vs ONNX Runtime parity | classic TorchScript exporter found **wrong by ~0.1** for RT-DETRv2 → switched to the dynamo exporter: 1.8e-5 |
 | Solution 11 | `pytest` (8) + live run against public feeds | UN News, Al Jazeera, CISA KEV collected (1,781 KEV → 87 matched to a sample inventory); stale INA feed and GDELT rate-limit reported |
 | Solution 12 | `pytest` (10) + OCR training on 3,000 synthetic plate crops | full read → section speed → signed violation → review → evidence path; OCR 98.7% exact on 300 held-out crops, ONNX parity 1.3e-5; release gate correctly **failed** (99.2% precision on confident reads < 99.5% required) |

@@ -20,6 +20,21 @@ cameras:                      # one entry per camera. RTSP URL from the VMS / ca
     privacy_masks: []
 
 detector:
+  backend: ${DETECTOR_BACKEND:-onnx}       # onnx = your trained RT-DETRv2 (fast, accurate on your cameras)
+                                           # zeroshot = OWLv2 text queries: works BEFORE training, slow (Step 4b)
+  zeroshot:
+    model: ${ZS_MODEL:-google/owlv2-base-patch16-ensemble}   # Apache-2.0; local folder path also works
+    input_size: 640                        # 640 px: ~1.3 s/frame on 8 x86 threads, same separation as 960 px
+    min_score: 0.15                        # OWLv2 person scores are low (0.2-0.35): keep this low for the person rule
+    queries:
+      person: ["a photo of a person"]
+      handgun: ["a photo of a handgun", "a photo of a pistol"]
+      rifle: ["a photo of a rifle"]
+      knife: ["a photo of a knife"]
+    alert_thresholds: {handgun: 0.45, rifle: 0.45, knife: 0.50}   # replace alerting.classes in zero-shot mode
+    min_hits: 2                            # detections needed ...
+    window_s: 6                            # ... within this many seconds (3 analysed frames at 0.5 fps)
+    fps: 0.5                               # analysed frames per second per camera in zero-shot mode
   model: models/detector/model.onnx        # YOUR fine-tuned model (see IMPLEMENTATION.md Steps 5-7)
   threads: 0                               # 0 = one per physical core
   batch: 4                                 # frames collected per analysis cycle (inference runs per frame)
@@ -32,6 +47,8 @@ alerting:
     knife: 0.70
   person_class: person                     # label of the person class in your model
   require_person_overlap: true             # a weapon must touch a detected person (cuts false alarms sharply)
+  confirm: track                           # track = same box in consecutive frames (>= 2 fps, trained model)
+                                           # window = min_hits detections within window_s (low fps, zero-shot)
   min_hits: 3                              # consecutive confirmations before alerting (3 at 2 fps = 1.5 s)
   cooldown_s: 60                           # per camera and class
   clip_pre_s: 5                            # evidence clip seconds before / after the alert

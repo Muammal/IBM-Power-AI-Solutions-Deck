@@ -50,7 +50,31 @@ python ../../common/python/vision/benchmark.py --model models/coco/model.onnx --
 
 **Check:** `parity ... OK`, and a cameras-per-LPAR number. Size the LPAR from it (keep 30% headroom).
 
+## Step 4b — Start in zero-shot mode (optional, before you have a trained model)
+
+The open-vocabulary detector OWLv2 (`google/owlv2-base-patch16-ensemble`, Apache-2.0) finds objects from text
+queries ("a photo of a handgun"): the service can run on day one, in a few cameras, with human review of every
+alert. It is slow on CPU and makes more mistakes than a site-trained model, so treat it as a pilot and as the
+labelling teacher for Step 5.
+
+```bash
+../../common/scripts/make_venv.sh requirements-zeroshot.txt venv-zeroshot && source venv-zeroshot/bin/activate
+hf download google/owlv2-base-patch16-ensemble
+DETECTOR_BACKEND=zeroshot python src/app.py
+```
+
+Zero-shot mode automatically uses its own tested settings (`detector.zeroshot`): 640 px input, 0.5 analysed
+fps per camera, thresholds 0.45 (handgun, rifle) / 0.50 (knife), and **window confirmation** (2 detections within
+6 s) instead of box tracking, because frames 2 s apart no longer overlap.
+
+**Check:** `false_alarm_rate.py` on your own normal footage passes your agreed limit before any alert is routed
+to the security desk (results on public test videos: README "Zero-shot mode, measured").
+
 ## Step 5 — Collect and label training data (the most important step)
+
+Speed it up with the zero-shot teacher: `python finetune/autolabel.py /data/recordings/staged --out data/prelabels/staged`
+pre-labels sampled frames; reviewers correct the boxes in CVAT instead of drawing every one.
+
 
 1. **Positives**: staged recordings with **replica/training weapons** (coordinate with security), on your own
    cameras, at every entrance, day and night (IR), different distances and how people really carry them. Aim for

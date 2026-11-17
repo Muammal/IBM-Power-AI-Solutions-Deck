@@ -2,6 +2,7 @@
 
 The engine is written so every part can be replaced in tests (detector, cameras, notifier, clock).
 """
+import collections
 import datetime as dt
 import logging
 import pathlib
@@ -18,7 +19,7 @@ from prometheus_client import Counter, Gauge, Histogram  # noqa: E402
 from vision.detector import iou  # noqa: E402
 from vision.evidence import sha256_bytes  # noqa: E402
 from vision.motion import MotionGate  # noqa: E402
-from vision.tracker import IoUTracker  # noqa: E402
+from vision.tracker import IoUTracker, Track  # noqa: E402
 from vision.video import apply_masks, write_clip  # noqa: E402
 
 log = logging.getLogger("weapons.pipeline")
@@ -64,6 +65,7 @@ class Pipeline:
         self.gates = {c: MotionGate(m.get("min_changed_fraction", 0.004), keepalive_s=m.get("keepalive_s", 10))
                       for c in cameras} if m.get("enabled", True) else {}
         self.last_alert = {}                                     # (camera, label) -> ts
+        self.window_hits = {}                                    # (camera, label) -> deque[(ts, det)]
         self.pending_clips = []                                  # dicts collecting post-event frames
         self.offline_alerted = set()
         self._stop = threading.Event()
@@ -74,18 +76,41 @@ class Pipeline:
         persons = [d.box for d in dets if d.label == a["person_class"]]
         weapons = [d for d in dets if d.label in self.thresholds and d.score >= self.thresholds[d.label]
                    and (not a["require_person_overlap"] or weapon_on_person(d.box, persons))]
-        tracker = self.trackers[cam_id]
-        tracker.update(weapons, ts)
         new_events = []
-        for t in tracker.confirmed():
+        if a.get("confirm", "track") == "window":
+            candidates = self._confirm_window(cam_id, ts, weapons)
+        else:
+            tracker = self.trackers[cam_id]
+            tracker.update(weapons, ts)
+            candidates = [t for t in tracker.confirmed() if not t.data.get("alerted")]
+        for t in candidates:
             key = (cam_id, t.label)
-            if t.data.get("alerted") or ts - self.last_alert.get(key, -1e18) < float(a["cooldown_s"]):
+            if ts - self.last_alert.get(key, -1e18) < float(a["cooldown_s"]):
                 continue
             t.data["alerted"] = True
             self.last_alert[key] = ts
             new_events.append(self._raise(cam_id, ts, rgb, dets, t))
         self._feed_clips(cam_id, ts, rgb)
         return new_events
+
+    def _confirm_window(self, cam_id, ts, weapons):
+        """Low-fps confirmation: min_hits detections of the same class on this camera within window_s seconds.
+        Used at ~0.5 analysed fps (zero-shot mode), where frames are 2 s apart and box-overlap tracking breaks
+        because people move and recordings cut between shots (measured: it missed 2 of 3 detectable videos)."""
+        a = self.cfg["alerting"]
+        window, need = float(a.get("window_s", 6)), int(a["min_hits"])
+        out = []
+        for label in {w.label for w in weapons}:
+            best = max((w for w in weapons if w.label == label), key=lambda w: w.score)
+            hits = self.window_hits.setdefault((cam_id, label), collections.deque())
+            hits.append((ts, best))
+            while hits and hits[0][0] < ts - window:
+                hits.popleft()
+            if len(hits) >= need:
+                top = max((h[1] for h in hits), key=lambda w: w.score)
+                out.append(Track(label, best.box, top.score, hits[0][0], ts, hits=len(hits)))
+                hits.clear()
+        return out
 
     def _raise(self, cam_id, ts, rgb, dets, track):
         a = self.cfg["alerting"]

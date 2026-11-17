@@ -62,10 +62,29 @@ response to the security team.
 |---|---|---|
 | Base detector | `PekingU/rtdetr_v2_r18vd` (RT-DETRv2, 20M params, COCO) | Apache-2.0 |
 | Production detector | the base fine-tuned on **your** labelled footage: person, handgun, rifle, knife | yours |
+| Interim / labelling teacher | `google/owlv2-base-patch16-ensemble` (OWLv2 zero-shot, text queries) | Apache-2.0 |
 
 There is no trustworthy, permissively licensed, off-the-shelf weapon model: the few public checkpoints are small,
 unvetted, or carry unclear licences. A production deployment therefore **trains its own detector** on footage from its
 own cameras (Steps 5–7), and the system will not start with a model that lacks the configured weapon classes.
+
+## Zero-shot mode, measured (start before you have a trained model)
+
+`DETECTOR_BACKEND=zeroshot` swaps the trained detector for **OWLv2** (`google/owlv2-base-patch16-ensemble`,
+Apache-2.0), which finds weapons from text queries. Results of the full pipeline (motion gate, rules,
+confirmation, cooldown) on public Wikimedia Commons videos, 2026-11-17, x86 laptop CPU:
+
+| Test set | Result |
+|---|---|
+| 3 videos without weapons (5.3 min parking-lot surveillance camera, mall café, street) | **0 false alarms** |
+| 5 firearms-range videos (pistol qualification ×2, handgun range, rifle training ×2) | **3 of 5 raised an alert** (scores 0.60–0.72); missed: rifle close-ups with no person in frame (blocked by the person rule by design), very small guns in a vertical phone clip |
+| Live service, 2 replayed cameras | handgun alert with correct boxes, 7 s H.264 clip, operator confirm, audit, hash chain intact |
+| Speed | ~1.3 s per frame at 640 px (8 threads): plan a few cameras per LPAR at 0.5 analysed fps |
+
+Lessons built into the code: box tracking breaks at 0.5 fps (frames 2 s apart), so zero-shot mode confirms with
+**2 detections within 6 s** instead (recall went from 1/5 to 3/5 with 0 false alarms); OWLv2 pads frames to a square,
+so boxes are scaled to the padded size. A public-video test is not a site acceptance test: run Step 8 on your own
+cameras. Use zero-shot as a pilot and as the labelling teacher (`finetune/autolabel.py`), then train the fast model.
 
 ## Compute and compliance
 

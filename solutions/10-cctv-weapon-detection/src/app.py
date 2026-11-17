@@ -40,17 +40,46 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("weapons")
 
 
+def effective_config(cfg):
+    """Zero-shot mode replaces thresholds, confirmations and analysis fps with its own tested values."""
+    if cfg["detector"].get("backend") != "zeroshot":
+        return cfg
+    import copy
+    cfg = copy.deepcopy(cfg)
+    zs = cfg["detector"]["zeroshot"]
+    cfg["alerting"]["classes"] = dict(zs["alert_thresholds"])
+    cfg["alerting"]["min_hits"] = int(zs["min_hits"])
+    cfg["alerting"]["confirm"] = "window"         # 2 s between analysed frames: box tracking would break
+    cfg["alerting"]["window_s"] = float(zs.get("window_s", 6))
+    for cam in cfg["cameras"]:
+        cam["fps"] = float(zs["fps"])
+    return cfg
+
+
+def make_detector(cfg):
+    d = cfg["detector"]
+    if d.get("backend") == "zeroshot":
+        from vision.zeroshot import ZeroShotDetector
+        zs = d["zeroshot"]
+        log.warning("ZERO-SHOT detector (%s): interim mode with more false alarms; train a site model (Steps 5-7)",
+                    zs["model"])
+        return ZeroShotDetector(zs["model"], zs["queries"], zs["input_size"], d["threads"], zs["min_score"])
+    from vision.detector import OnnxDetector
+    det = OnnxDetector(ROOT / d["model"], threads=d["threads"], min_score=d["min_score"])
+    missing = set(cfg["alerting"]["classes"]) - set(det.labels)
+    if missing:
+        raise SystemExit(f"model has no classes {missing}: train/export the weapon model first (IMPLEMENTATION.md), "
+                         "or start in zero-shot mode: DETECTOR_BACKEND=zeroshot")
+    return det
+
+
 def build(cfg=CFG, detector=None, cameras=None, notifier=None, start=True):
     """Wire everything together. Tests pass fakes for detector/cameras/notifier."""
+    cfg = effective_config(cfg)
     st = cfg["storage"]
     store = EventStore(ROOT / st["db"])
     if detector is None:
-        from vision.detector import OnnxDetector
-        detector = OnnxDetector(ROOT / cfg["detector"]["model"], threads=cfg["detector"]["threads"],
-                                min_score=cfg["detector"]["min_score"])
-        missing = set(cfg["alerting"]["classes"]) - set(detector.labels)
-        if missing:
-            raise SystemExit(f"model has no classes {missing}: train/export the weapon model first (IMPLEMENTATION.md)")
+        detector = make_detector(cfg)
     if cameras is None:
         from vision.video import CameraStream
         buf = float(cfg["alerting"]["clip_pre_s"]) + 1
