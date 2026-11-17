@@ -1,0 +1,69 @@
+# Solution 11 — National open-source situational awareness + cyber threat intelligence.
+# Scope: PUBLIC sources about EVENTS (security incidents, outages, protests, weather, markets, cyber threats).
+# Out of scope by design: profiling individuals, monitoring personal social-media accounts, person search.
+
+organisation:
+  name: ${ORG_NAME:-Example Bank of Iraq}
+  domains: [example-bank.iq]                 # your real domains: used to detect lookalike phishing domains
+  brand_keywords: [examplebank]              # strings that appear in lookalike domains
+  software_inventory: data/inventory.csv     # vendor,product (,version) of your IT estate: matched to CISA KEV
+
+sources:                                     # public feeds only; verified live on 2026-11-16
+  # Iraqi News Agency: the feed answered on 2026-11-16 but its newest item was from 2026-05-07 (stale).
+  # Re-enable when it updates again; the service reports stale sources in /health and /api/sources.
+  # - {id: ina-ar, type: rss, url: "https://www.ina.iq/rss.xml", lang: ar, interval_min: 10}
+  - {id: un-news-ar, type: rss, url: "https://news.un.org/feed/subscribe/ar/news/region/middle-east/feed/rss.xml", lang: ar, interval_min: 30}
+  - {id: un-news-en, type: rss, url: "https://news.un.org/feed/subscribe/en/news/region/middle-east/feed/rss.xml", lang: en, interval_min: 30}
+  - {id: aljazeera-ar, type: rss, url: "https://www.aljazeera.net/aljazeerarss/a7c186be-1baa-4bd4-9d80-a84db769f779/73d0e1b4-532f-45ef-b135-bfdff8b8cab9", lang: ar, interval_min: 15}
+  - {id: gdelt-iraq, type: gdelt, query: "(Iraq OR Kurdistan) sourcecountry:IZ", interval_min: 15}
+  - {id: cisa-kev, type: kev, url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", interval_min: 360}
+  - {id: ct-lookalikes, type: crtsh, interval_min: 720}
+  # Add Iraqi / Kurdish outlets that publish RSS (check their terms of use first):
+  # - {id: outlet-x, type: rss, url: "https://.../rss", lang: ckb, interval_min: 15}
+
+collection:
+  user_agent: "situational-awareness/1.0 (+contact: soc@example.local)"
+  timeout_s: 25
+  min_seconds_between_requests_per_host: 5   # GDELT requires >= 5 s
+  fetch_full_text: false                     # true = download the article page too (robots.txt respected)
+  max_item_age_days: 3
+
+enrichment:
+  llm_url: ${LLM_URL:-http://127.0.0.1:8080/v1}   # Granite 4.2-8B (common step C5)
+  max_tokens: 700
+  retry_pending_every_min: 10                # items stay "pending" while the LLM is down and are retried
+
+clustering:
+  window_hours: 48
+  jaccard: 0.45                              # title-shingle similarity for the same story
+
+alerts:                                      # rules evaluated on every new event
+  - name: security-incident-operating-areas
+    when: {categories: [security_incident], governorates: [Baghdad, Basra, Erbil], min_severity: 3}
+    notify: [soc]
+  - name: infrastructure-outage
+    when: {categories: [infrastructure_outage], min_severity: 3}
+    notify: [operations]
+  - name: brand-mentioned
+    when: {keywords_from_org: true}
+    notify: [communications]
+channels:
+  soc: ${SOC_WEBHOOK_URL:-}
+  operations: ${OPS_WEBHOOK_URL:-}
+  communications: ${COMMS_WEBHOOK_URL:-}
+
+briefing:
+  daily_at: "06:30"                          # local time
+  lookback_hours: 24
+
+retention:
+  items_days: 90
+  events_days: 365
+
+storage:
+  db: data/osint.db
+security:
+  tokens_file: tokens.yaml
+server:
+  host: 127.0.0.1
+  port: 8011

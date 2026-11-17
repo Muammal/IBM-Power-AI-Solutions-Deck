@@ -1,0 +1,10 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# No torch: the LLM runs in llama-server (Granite 4.2, Power10 MMA); this service collects, stores and serves.
+feedparser==6.0.14
+httpx==0.28.1
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+prometheus-client==0.26.0
+PyYAML==6.0.3+ppc64le1

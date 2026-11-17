@@ -70,6 +70,22 @@ Practical reading:
 * Personal data: Solutions 02, 04 and 09 can process personal data (documents, call recordings, logs). Apply
   retention limits and access control; Solution 04's step-by-step includes a consent/retention step.
 
+## Surveillance, CCTV and enforcement
+
+Solutions 10–12 process camera images, vehicle plates and public information. They are built with these limits,
+which their `AGENTS.md` files make non-negotiable for future changes:
+
+| Solution | Built-in safeguards | Deliberately not implemented |
+|---|---|---|
+| 10 CCTV weapon detection | human verification of every alert, privacy masks, retention, audit of every view, no automatic response | face recognition, identifying or tracking individuals |
+| 11 Situational awareness | public sources only, polite collection, authors dropped, events not people, retention | social-media account monitoring, person profiles or search |
+| 12 Traffic ANPR / speed | conservative speed bound, clock gate, signed evidence, mandatory human review, 24 h deletion of non-violation reads, keyed hashes for statistics | plate search, vehicle tracking history, hotlist matching |
+
+Before deployment each needs a documented legal basis and purpose, signage where required (CCTV, enforcement
+cameras), retention periods agreed with legal counsel, and (for speed enforcement) type approval / metrological
+certification of the complete installation by the competent authority. Organisations should run a data-protection
+impact assessment even where Iraqi law does not yet require one.
+
 ## Model licences
 
 Only models with permissive licences are used as defaults (Apache-2.0 or MIT). See [`MODELS.md`](MODELS.md).

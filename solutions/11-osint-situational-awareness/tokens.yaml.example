@@ -1,0 +1,7 @@
+# Copy to tokens.yaml (never commit tokens.yaml). Create entries with:
+#   cd solutions/11-osint-situational-awareness && PYTHONPATH=../../common/python python -m vision.auth new-token <name> <role>
+# Roles: viewer (dashboard, briefings) < operator (analyst corrections) < admin
+users:
+  - name: example-analyst
+    role: operator
+    sha256: 0000000000000000000000000000000000000000000000000000000000000000

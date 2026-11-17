@@ -1,0 +1,14 @@
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
+--prefer-binary
+# Runtime (no torch): PyAV decodes RTSP, OpenCV draws/encodes, ONNX Runtime runs RT-DETRv2 (MLAS, POWER10 MMA).
+av==15.1.0+ppc64le1
+opencv-python-headless==4.13.0.92+ppc64le1
+onnxruntime==1.23.1+ppc64le1
+numpy==2.4.1+ppc64le1
+cryptography==46.0.2+ppc64le1
+prometheus-client==0.26.0
+fastapi==0.135.2
+uvicorn==0.42.0
+pydantic==2.12.5
+httpx==0.28.1
+PyYAML==6.0.3+ppc64le1

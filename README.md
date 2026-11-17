@@ -9,7 +9,7 @@
 
 </div>
 
-Nine simple, production-shaped AI solutions that run on **IBM Power10/Power11 (ppc64le)**, on
+Twelve production-shaped AI solutions that run on **IBM Power10/Power11 (ppc64le)**, on
 **IBM Cloud Power Virtual Server** or **on-premises**, built on current **open-weight, fine-tunable** models and
 IBM's Power-optimised Python wheels. They are designed for Iraqi enterprises: Arabic (including Iraqi dialect)
 and Kurdish where language matters, **CPU-only by default** so no export-controlled GPU is needed, and fully
@@ -28,6 +28,19 @@ offline-capable so data can stay in the country.
 | 07 | [Ticket classification & routing](solutions/07-ticket-classification/) | Granite 4.2 (teacher) → Granite Embedding 278M (student, ONNX) | encoder fine-tuning | contact centers |
 | 08 | [Arabic ↔ Kurdish ↔ English translation](solutions/08-translation-ar-ku-en/) | MADLAD-400-3B-MT (+ Granite post-edit) | LoRA on translation memory | government, KRG, NGOs, banks |
 | 09 | [Agentic IT-operations assistant](solutions/09-it-ops-agent/) | Granite 4.2-8B/30B tool calling | LoRA on approved agent runs | data-center operations |
+
+### Security and computer vision
+
+| # | Solution | Flagship model(s) | Fine-tuning | Typical users |
+|---|---|---|---|---|
+| 10 | [Weapon detection across CCTV cameras](solutions/10-cctv-weapon-detection/) | RT-DETRv2 (ONNX Runtime) trained on your footage | detector on site footage + operator verdicts | banks, ministries, universities, oil & gas sites |
+| 11 | [National open-source situational awareness](solutions/11-osint-situational-awareness/) | Granite 4.2 event extraction over public feeds, CISA KEV, CT logs | LoRA on analyst corrections | SOC, security, operations, business continuity |
+| 12 | [Traffic ANPR and section-speed enforcement](solutions/12-traffic-anpr-speed/) | RT-DETRv2 vehicles + plates, CRNN-CTC plate OCR | detector + OCR on your cameras | traffic directorates, highway operators |
+
+These three run as long-lived services with operator consoles, role-based access, audit logs, Prometheus metrics,
+evidence integrity (hashes, signatures), retention jobs, release gates for new models, and test suites. They keep
+humans in charge of every consequential decision, and are deliberately limited: no face recognition, no profiling
+of individuals, no plate search (see [`COMPLIANCE.md`](COMPLIANCE.md#surveillance-cctv-and-enforcement)).
 
 Every solution folder contains the same set of files:
 
@@ -57,6 +70,7 @@ systemd services, and converting fine-tuned models to GGUF.
  │ Solution APIs (FastAPI, 127.0.0.1)                                                         │  │
  │  01 :7860 chatbot · 02 :8002 RAG · 03 :8003 documents · 04 :8004 calls · 05 :8005 forecast │──┘
  │  06 :8006 fraud · 07 :8007 tickets (ONNX Runtime) · 08 :8008 translation · 09 :8009 agent  │
+ │  10 :8010 CCTV weapons · 11 :8011 situational awareness · 12 :8012 traffic ANPR/speed      │
  │                                                                                            │
  │ PyTorch 2.10 / ONNX Runtime 1.23 / XGBoost 3.0 from IBM's ppc64le wheel index (OpenBLAS    │
  │ POWER10 kernels) · common/python: llm_client.py, power_runtime.py, lora_sft.py             │
@@ -98,13 +112,13 @@ pip install -r tools/requirements-docs.txt
 python tools/build_docx.py            # all solutions + root documents
 ```
 
-## Validation status (2026-11-15)
+## Validation status (2026-11-15, Solutions 10-12 on 2026-11-16)
 
 Power10/Power11 hardware was **not available** while building this repo. What was verified, and how:
 
 | Item | How | Result |
 |---|---|---|
-| Package availability | `tools/check_requirements.py`: full pip resolution of every `requirements*.txt` for manylinux ≤ 2.34 ppc64le / CPython 3.12, binary wheels only, markers evaluated for Linux | all 12 files resolve (17–106 packages each, IBM `+ppc64le` builds for torch, numpy, xgboost, onnxruntime, av, docling-parse, ...) |
+| Package availability | `tools/check_requirements.py`: full pip resolution of every `requirements*.txt` for manylinux ≤ 2.34 ppc64le / CPython 3.12, binary wheels only, markers evaluated for Linux | all 16 files resolve (17–106 packages each, IBM `+ppc64le` builds for torch, numpy, xgboost, onnxruntime, av, docling-parse, ...) |
 | Model facts | Hugging Face API: licence, parameters, `transformers_version`, `model_type` for every model in `MODELS.md` | recorded in `MODELS.md` |
 | Granite 4.2 chat template | tokenizer on x86, transformers 4.57.6 | `enable_thinking=False` → `<think></think>` prefill; tools rendered |
 | Solution 05 | full run on x86 CPU, same library versions | zero-shot MAE 3.60 MW → fine-tuned 2.94 MW; API OK |
@@ -112,8 +126,12 @@ Power10/Power11 hardware was **not available** while building this repo. What wa
 | Solution 07 | full run on x86 CPU | train → ONNX (parity error 1.6e-6) → int8 (278 MB vs 1110 MB) → ONNX Runtime API, ~0.1 s per ticket |
 | Solution 09 | agent loop with a scripted LLM stub | runbook tool call, approval denial, injected service name (`rm -rf /`) rejected by the allow-list, audit log written |
 | Solutions 03, 04, 08 helpers | unit checks on x86 | invoice validation on gold/bad data, Arabic-Indic digit normalisation, phone/card redaction, Arabic WER, chrF |
+| Solution 10 | `pytest` (8) + end-to-end run with the real ONNX detector on a test video | rules, hash chain, retention, escalation, auth pass; 0 false alarms on 30 s video; 108 ms/frame at 8 threads (x86) |
+| Shared RT-DETRv2 export | PyTorch vs ONNX Runtime parity | classic TorchScript exporter found **wrong by ~0.1** for RT-DETRv2 → switched to the dynamo exporter: 1.8e-5 |
+| Solution 11 | `pytest` (8) + live run against public feeds | UN News, Al Jazeera, CISA KEV collected (1,781 KEV → 87 matched to a sample inventory); stale INA feed and GDELT rate-limit reported |
+| Solution 12 | `pytest` (10) + OCR training on 3,000 synthetic plate crops | full read → section speed → signed violation → review → evidence path; OCR 98.7% exact on 300 held-out crops, ONNX parity 1.3e-5; release gate correctly **failed** (99.2% precision on confident reads < 99.5% required) |
 | All Python | `py_compile`; all shell scripts `bash -n` | OK |
-| Not executed | llama.cpp/whisper.cpp Power builds, PowerVS commands, systemd units, Docling, MADLAD and Whisper inference | run the checks in each IMPLEMENTATION.md on your LPAR |
+| Not executed | llama.cpp/whisper.cpp Power builds, PowerVS commands, systemd units, Docling, MADLAD and Whisper inference, live RTSP cameras, trained weapon/plate models (need site data) | run the checks in each IMPLEMENTATION.md on your LPAR |
 
 ## License
 

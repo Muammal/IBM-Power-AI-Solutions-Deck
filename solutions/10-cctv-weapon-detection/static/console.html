@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CCTV Weapon Alerts</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --text:#e8e8e8; --muted:#9aa0a6; --red:#e5484d; --green:#30a46c; --amber:#f5a623; }
+  body { margin:0; font-family:system-ui, "Segoe UI", Tahoma, sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; gap:12px; align-items:center; padding:12px 16px; background:#14171c; position:sticky; top:0; }
+  header h1 { font-size:18px; margin:0; flex:1; }
+  input, select, button { font:inherit; padding:6px 10px; border-radius:6px; border:1px solid #333; background:#222; color:var(--text); }
+  button { cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; padding:16px; }
+  .card { background:var(--card); border-radius:10px; overflow:hidden; border:2px solid transparent; }
+  .card.new { border-color:var(--red); }
+  .card img { width:100%; display:block; background:#000; min-height:180px; }
+  .meta { padding:10px 12px; font-size:14px; line-height:1.6; }
+  .label { font-weight:700; color:var(--red); text-transform:uppercase; }
+  .actions { display:flex; gap:8px; padding:0 12px 12px; }
+  .ok { background:var(--red); border-color:var(--red); }
+  .fa { background:#2b2f36; }
+  .status { color:var(--muted); font-size:13px; }
+  #cams { padding:0 16px; color:var(--muted); font-size:13px; }
+  .off { color:var(--amber); }
+</style>
+</head>
+<body>
+<header>
+  <h1>تنبيهات الأسلحة / Weapon alerts</h1>
+  <select id="filter"><option value="new">جديد / New</option><option value="">الكل / All</option>
+    <option value="confirmed">مؤكد / Confirmed</option><option value="false_alarm">إنذار كاذب / False alarm</option></select>
+  <input id="token" type="password" placeholder="API token" size="18">
+  <button onclick="saveToken()">دخول / Login</button>
+</header>
+<div id="cams"></div>
+<div class="grid" id="grid"></div>
+<audio id="beep" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></audio>
+<script>
+let token = sessionStorage.getItem("token") || "";
+let seen = new Set();
+const H = () => ({ "Authorization": "Bearer " + token });
+function saveToken() { token = document.getElementById("token").value.trim(); sessionStorage.setItem("token", token); refresh(); }
+async function img(id) {
+  const r = await fetch(`/api/events/${id}/snapshot`, { headers: H() });
+  return r.ok ? URL.createObjectURL(await r.blob()) : "";
+}
+async function review(id, verdict) {
+  const note = verdict === "false_alarm" ? (prompt("سبب الإنذار الكاذب / Why false alarm? (optional)") || "") : "";
+  await fetch(`/api/events/${id}/review`, { method: "POST", headers: { ...H(), "Content-Type": "application/json" },
+    body: JSON.stringify({ verdict, note }) });
+  refresh();
+}
+async function openClip(id) {
+  const r = await fetch(`/api/events/${id}/clip`, { headers: H() });
+  if (!r.ok) { alert("المقطع غير جاهز بعد / Clip not ready yet"); return; }
+  window.open(URL.createObjectURL(await r.blob()));
+}
+async function refresh() {
+  if (!token) return;
+  const status = document.getElementById("filter").value;
+  const r = await fetch(`/api/events?limit=60${status ? "&status=" + status : ""}`, { headers: H() });
+  if (!r.ok) { document.getElementById("grid").innerHTML = `<p class="status">HTTP ${r.status}</p>`; return; }
+  const events = await r.json();
+  const grid = document.getElementById("grid");
+  let fresh = false;
+  const cards = await Promise.all(events.map(async e => {
+    if (e.status === "new" && !seen.has(e.id)) { fresh = true; seen.add(e.id); }
+    const t = new Date(e.ts * 1000).toLocaleString("en-GB");
+    return `<div class="card ${e.status === "new" ? "new" : ""}">
+      <img src="${await img(e.id)}" alt="">
+      <div class="meta"><span class="label">${e.label}</span> · ${(e.score * 100).toFixed(0)}%<br>
+        ${e.camera} · ${t}<br><span class="status">${e.status}${e.reviewed_by ? " · " + e.reviewed_by : ""}</span></div>
+      <div class="actions">
+        ${e.status === "new" ? `<button class="ok" onclick="review('${e.id}','confirmed')">تأكيد / Confirm</button>
+        <button class="fa" onclick="review('${e.id}','false_alarm')">إنذار كاذب / False alarm</button>` : ""}
+        <button onclick="openClip('${e.id}')">مقطع / Clip</button>
+      </div></div>`;
+  }));
+  grid.innerHTML = cards.join("") || `<p class="status">لا توجد تنبيهات / No alerts</p>`;
+  if (fresh) document.getElementById("beep").play().catch(() => {});
+  const c = await fetch("/api/cameras", { headers: H() });
+  if (c.ok) {
+    const cams = await c.json();
+    document.getElementById("cams").innerHTML = cams.map(x =>
+      `<span class="${x.connected ? "" : "off"}">● ${x.name}</span>`).join(" &nbsp; ");
+  }
+}
+document.getElementById("filter").onchange = refresh;
+setInterval(refresh, 3000);
+refresh();
+</script>
+</body>
+</html>

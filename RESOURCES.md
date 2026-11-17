@@ -54,4 +54,4 @@ Each solution has its own `RESOURCES.md` with topic-specific material. This page
 ## Suggested order through this repo
 
 05 (smallest, no LLM) → 06 (tabular ML) → 01 (first LLM) → 02 (RAG) → 07 (fine-tuning + ONNX) →
-03 (documents) → 04 (speech) → 08 (translation) → 09 (agents).
+03 (documents) → 04 (speech) → 08 (translation) → 09 (agents) → 11 (OSINT services) → 10 and 12 (computer vision services).

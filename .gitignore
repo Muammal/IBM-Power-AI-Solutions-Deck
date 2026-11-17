@@ -39,3 +39,16 @@ Thumbs.db
 
 # Local tooling
 .claude/
+
+# Runtime data of the camera / OSINT services (databases, evidence media, keys, secrets)
+**/data/*.db
+**/data/*.db-wal
+**/data/*.db-shm
+**/data/media/
+**/data/keys/
+**/data/briefings/
+**/tokens.yaml
+*.pem
+solutions/10-cctv-weapon-detection/data/training/
+solutions/11-osint-situational-awareness/data/inventory.csv
+solutions/11-osint-situational-awareness/data/sft_events.jsonl

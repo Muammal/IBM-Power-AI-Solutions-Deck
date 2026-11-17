@@ -1,0 +1,74 @@
+# Solution 10 — Weapon detection across an organisation's CCTV cameras. Edit this file, not the code.
+# Secrets (camera passwords, SMTP, webhook tokens) come from environment variables / .env, never from this file.
+
+site:
+  name: ${SITE_NAME:-HQ Baghdad}
+  timezone: Asia/Baghdad
+
+cameras:                      # one entry per camera. RTSP URL from the VMS / camera (sub-stream is enough: 720p)
+  - id: lobby-1
+    name: Main lobby entrance
+    url: ${CAM_LOBBY_1_URL:-rtsp://user:pass@10.0.10.21:554/Streaming/Channels/102}
+    fps: 2                    # analysed frames per second while there is motion
+    enabled: true
+    privacy_masks: []         # polygons [[x,y],...] in pixels, blacked out before analysis and storage
+  - id: gate-north
+    name: North vehicle gate
+    url: ${CAM_GATE_NORTH_URL:-rtsp://user:pass@10.0.10.35:554/Streaming/Channels/102}
+    fps: 2
+    enabled: true
+    privacy_masks: []
+
+detector:
+  model: models/detector/model.onnx        # YOUR fine-tuned model (see IMPLEMENTATION.md Steps 5-7)
+  threads: 0                               # 0 = one per physical core
+  batch: 4                                 # frames collected per analysis cycle (inference runs per frame)
+  min_score: 0.25                          # nothing below this leaves the detector
+
+alerting:
+  classes:                                 # alert classes and their score thresholds (set from eval, Step 7)
+    handgun: 0.60
+    rifle: 0.60
+    knife: 0.70
+  person_class: person                     # label of the person class in your model
+  require_person_overlap: true             # a weapon must touch a detected person (cuts false alarms sharply)
+  min_hits: 3                              # consecutive confirmations before alerting (3 at 2 fps = 1.5 s)
+  cooldown_s: 60                           # per camera and class
+  clip_pre_s: 5                            # evidence clip seconds before / after the alert
+  clip_post_s: 5
+  escalate_after_s: 120                    # re-notify the escalation channel if nobody reviewed the alert
+  camera_offline_after_s: 60               # raise a system alert when a camera stops delivering frames
+
+motion:
+  enabled: true
+  min_changed_fraction: 0.004
+  keepalive_s: 10                          # analyse at least every N seconds even without motion
+
+notify:
+  webhooks:                                # VMS / PSIM / SOC integrations (JSON POST)
+    - ${ALERT_WEBHOOK_URL:-}
+  escalation_webhooks:
+    - ${ESCALATION_WEBHOOK_URL:-}
+  email:
+    enabled: false
+    smtp_host: ${SMTP_HOST:-mail.example.local}
+    smtp_port: 587
+    username: ${SMTP_USER:-}
+    password: ${SMTP_PASSWORD:-}
+    sender: ${ALERT_SENDER:-cctv-ai@example.local}
+    recipients: [security-desk@example.local]
+
+storage:
+  db: data/events.db
+  media_dir: data/media
+  retention_days: 30                       # unreviewed + false alarms
+  confirmed_retention_days: 365            # confirmed incidents (or as your legal team requires)
+  keep_false_alarms_for_training: true     # copy false-alarm snapshots to data/training/negatives before purge
+
+security:
+  tokens_file: tokens.yaml                 # hashed API tokens and roles (python -m vision.auth new-token ...)
+  evidence_key: data/keys/evidence_ed25519.pem
+
+server:
+  host: 127.0.0.1
+  port: 8010

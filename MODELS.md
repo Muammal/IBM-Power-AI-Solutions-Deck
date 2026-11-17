@@ -23,6 +23,16 @@ and handles **Arabic** where the task needs language.
 | Time-series forecasting | `ibm-granite/granite-timeseries-ttm-r2` | ~1M | Apache-2.0 | granite-tsfm (torch) | 05 |
 | Tabular fraud model | XGBoost 3 (trained by you) | n/a | Apache-2.0 | IBM `xgboost` wheel | 06 |
 | Translation AR / KU (Sorani, Kurmanji) / EN | `google/madlad400-3b-mt` | 2.9B | Apache-2.0 | transformers (torch, bf16) | 08 |
+| Object detection (base for weapons, vehicles, plates) | `PekingU/rtdetr_v2_r18vd` (RT-DETRv2, COCO) | 20M | Apache-2.0 | ONNX Runtime (MLAS, MMA); export via dynamo exporter | 10, 12 |
+| Plate OCR | CRNN-CTC defined in `solutions/12-traffic-anpr-speed/src/ocr.py`, trained on your crops | ~1M | yours | ONNX Runtime | 12 |
+| Event extraction from public news | `ibm-granite/granite-4.2-8b` / `-3b` | 8.8B / 3.7B | Apache-2.0 | llama-server | 11 |
+
+RT-DETRv2 (verified 2026-11-16): `rt_detr_v2` is native in transformers 4.57.6. Export it with
+`common/python/vision/export_rtdetr.py`: the classic TorchScript ONNX exporter produced scores ~0.1 off for this
+model; the dynamo exporter matches PyTorch to 1.8e-5. There is no trustworthy permissively licensed weapon or Iraqi
+plate model on Hugging Face (checked 2026-11-16: small, unvetted or unlicensed checkpoints only; most plate models
+are AGPL YOLO derivatives), so Solutions 10 and 12 train their own on site data. Ultralytics YOLO (AGPL-3.0) is
+excluded by the licence rule.
 
 Granite 4.2 (released 2026-08-25): dense `GraniteForCausalLM`, 128K native context, built-in
 `<think>` reasoning with an `enable_thinking` switch, tool calling, Arabic among the 12 tested languages.

@@ -7,8 +7,9 @@ AGENTS.md is in that solution's `docs/AGENTS.docx`.
 
 ## What this repository is
 
-Nine AI solutions for Iraqi enterprises that run on **IBM Power10/Power11 (ppc64le), CPU-only**, on IBM Cloud
-Power Virtual Server or on-premises, using open, fine-tunable models. Shared platform code is in `common/`.
+Twelve AI solutions for Iraqi enterprises that run on **IBM Power10/Power11 (ppc64le), CPU-only**, on IBM Cloud
+Power Virtual Server or on-premises, using open, fine-tunable models. Shared platform code is in `common/`
+(`common/python/vision/` for the camera solutions 10 and 12).
 
 ## Hard rules (apply to every change)
 
@@ -29,7 +30,10 @@ Power Virtual Server or on-premises, using open, fine-tunable models. Shared pla
    move money must require human approval (see `solutions/09-it-ops-agent/src/agent.py: requires_approval`).
 7. **Evaluation gates.** Every solution has an eval script. A change to models, prompts or features must not make
    its metric worse; record the before/after numbers in the change log.
-8. **Learning material.** Code is meant to be read by people learning AI on Power: keep files short, commented,
+8. **Surveillance limits (Solutions 10-12).** Never add face recognition, identification or tracking of individuals,
+   person profiling/search, social-media account monitoring, or plate search. Keep human review before any alert
+   response, notice or fine. See `COMPLIANCE.md` "Surveillance, CCTV and enforcement".
+9. **Learning material.** Code is meant to be read by people learning AI on Power: keep files short, commented,
    and explain *why* on Power-specific choices (threads, MMA, SMT, wheel index).
 
 ## How to work in this repo
@@ -64,3 +68,4 @@ Then run the **Verify** block of the solution's own `AGENTS.md`.
 | Date | Agent / author | Change | Verification result |
 |---|---|---|---|
 | 2026-11-15 | Claude Code (Opus 5.5) | Created the repository: common platform layer, Solutions 02–09, Solution 01 integrated from the existing power-chatbot, compliance and model matrix, docx tooling | see "Validation status" in README.md |
+| 2026-11-16 | Claude Code (Opus 5.5) | Added Solutions 10 (CCTV weapon detection), 11 (open-source situational awareness), 12 (traffic ANPR + section speed); shared `common/python/vision/` (video, detector, tracker, evidence, store, auth, train/export/eval/benchmark); surveillance rule 8; compliance section | 26 tests pass (8 + 8 + 10) on x86; RT-DETRv2 ONNX parity 1.8e-5 (dynamo exporter); live feed run; see README validation table |

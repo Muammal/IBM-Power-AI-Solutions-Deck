@@ -218,3 +218,23 @@ The default in this repo is **CPU-only**. If a fine-tuning job is too slow on CP
 [`COMPLIANCE.md`](../COMPLIANCE.md) first: most current data-center GPUs are export-controlled for Iraq.
 The fine-tuning scripts run on CPU by default and accept `--gpu` to use one CUDA device on a separate,
 compliant training machine. The trained model always comes back to Power for inference via C8.
+
+---
+
+## Computer-vision layer (Solutions 10 and 12)
+
+`common/python/vision/` holds the pieces both camera solutions share: resilient RTSP readers (`video.py`), motion
+gating, the RT-DETRv2 ONNX detector, an IoU tracker, evidence hashing/signing, a SQLite helper with an audit table,
+token auth, and the model lifecycle tools:
+
+```bash
+common/scripts/make_venv.sh common/requirements-vision-train.txt /opt/venv-vision-train
+source /opt/venv-vision-train/bin/activate
+python common/python/vision/train_rtdetr.py   --train data/train --val data/val --out out/detector
+python common/python/vision/export_rtdetr.py  --model out/detector/best --out models/detector   # dynamo + parity
+python common/python/vision/eval_detector.py  --model models/detector/model.onnx --data data/test --gate '...'
+python common/python/vision/benchmark.py      --model models/detector/model.onnx --fps 2 --motion-duty 0.3
+```
+
+Always export RT-DETR(v2) with `export_rtdetr.py`: the classic TorchScript ONNX exporter gives wrong scores for this
+model (measured ~0.1 error); the script uses the dynamo exporter and refuses to finish when parity fails.

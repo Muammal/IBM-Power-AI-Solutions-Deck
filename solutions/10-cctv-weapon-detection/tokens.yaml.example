@@ -1,0 +1,7 @@
+# Copy to tokens.yaml (never commit tokens.yaml). Create entries with:
+#   cd solutions/10-cctv-weapon-detection && PYTHONPATH=../../common/python python -m vision.auth new-token <name> <role>
+# Roles: viewer (see alerts) < operator (confirm / false alarm) < reviewer < admin (integrity check)
+users:
+  - name: example-operator
+    role: operator
+    sha256: 0000000000000000000000000000000000000000000000000000000000000000

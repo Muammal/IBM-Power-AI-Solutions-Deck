@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed Violation Review</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --text:#1d1f23; --muted:#6b7280; --red:#c62828; --green:#2e7d32; --line:#e2e5ea; }
+  body { margin:0; font-family:system-ui, "Segoe UI", Tahoma, sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; gap:12px; align-items:center; padding:12px 16px; background:#1d2733; color:#fff; position:sticky; top:0; }
+  header h1 { font-size:18px; margin:0; flex:1; }
+  input, select, button { font:inherit; padding:6px 10px; border-radius:6px; border:1px solid #c5cad3; }
+  button { cursor:pointer; background:#fff; }
+  main { padding:16px; display:grid; gap:14px; }
+  .v { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin:10px 0; }
+  .row img { width:100%; border-radius:6px; background:#000; min-height:60px; }
+  .cap { font-size:12px; color:var(--muted); }
+  .facts { font-size:14px; line-height:1.7; }
+  .speed { font-size:20px; font-weight:700; color:var(--red); }
+  .ok { background:var(--red); color:#fff; border-color:var(--red); }
+  .no { background:#eee; }
+  .sig { font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>مراجعة مخالفات السرعة / Speed violation review</h1>
+  <select id="status"><option value="pending">قيد المراجعة / Pending</option><option value="approved">مقبولة / Approved</option>
+    <option value="rejected">مرفوضة / Rejected</option></select>
+  <input id="token" type="password" placeholder="API token" size="18"><button onclick="login()">دخول / Login</button>
+</header>
+<main id="list"></main>
+<script>
+let token = sessionStorage.getItem("token") || "";
+const H = () => ({ Authorization: "Bearer " + token });
+function login() { token = document.getElementById("token").value.trim(); sessionStorage.setItem("token", token); load(); }
+async function img(id, which, kind) {
+  const r = await fetch(`/api/violations/${id}/image/${which}/${kind}`, { headers: H() });
+  return r.ok ? URL.createObjectURL(await r.blob()) : "";
+}
+async function decide(id, decision) {
+  const reason = prompt(decision === "approved" ? "ملاحظة (اختياري) / Note (optional)" : "سبب الرفض / Reason for rejection") ?? null;
+  if (reason === null) return;
+  const r = await fetch(`/api/violations/${id}/decision`, { method: "POST", headers: { ...H(), "Content-Type": "application/json" },
+    body: JSON.stringify({ decision, reason }) });
+  if (!r.ok) alert("HTTP " + r.status);
+  load();
+}
+async function download(id) {
+  const r = await fetch(`/api/violations/${id}/evidence.zip`, { headers: H() });
+  if (!r.ok) { alert("HTTP " + r.status); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = id + ".zip"; a.click();
+}
+async function load() {
+  if (!token) return;
+  const status = document.getElementById("status").value;
+  const r = await fetch(`/api/violations?status=${status}`, { headers: H() });
+  const list = document.getElementById("list");
+  if (!r.ok) { list.textContent = "HTTP " + r.status; return; }
+  const rows = await r.json();
+  const html = await Promise.all(rows.map(async s => {
+    const v = await (await fetch(`/api/violations/${s.id}`, { headers: H() })).json();
+    const m = v.manifest;
+    const [ep, eo, xp, xo] = await Promise.all([img(v.id, "entry", "plate"), img(v.id, "entry", "overview"),
+      img(v.id, "exit", "plate"), img(v.id, "exit", "overview")]);
+    return `<section class="v">
+      <div class="facts"><b>${v.id}</b> · ${m.section} · <b>${v.plate}</b><br>
+        <span class="speed">${m.measured_kmh} km/h</span> (الحد الأدنى المضمون / guaranteed ≥ ${m.lower_bound_kmh}) ·
+        limit ${m.limit_kmh} + ${m.tolerance_kmh} · ${m.distance_m} m<br>
+        entry ${m.entry_time_utc} (${m.entry.camera}) → exit ${m.exit_time_utc} (${m.exit.camera})<br>
+        <span class="sig">signature: ${v.signature_valid ? "✔ valid" : "✘ INVALID"} · status: ${v.status}${v.reviewer ? " · " + v.reviewer : ""}</span></div>
+      <div class="row">
+        <div><img src="${ep}"><div class="cap">entry plate · confidence ${m.entry.confidence}</div></div>
+        <div><img src="${xp}"><div class="cap">exit plate · confidence ${m.exit.confidence}</div></div>
+        <div><img src="${eo}"><div class="cap">entry overview</div></div>
+        <div><img src="${xo}"><div class="cap">exit overview</div></div>
+      </div>
+      ${v.status === "pending" ? `<button class="ok" onclick="decide('${v.id}','approved')">اعتماد / Approve</button>
+        <button class="no" onclick="decide('${v.id}','rejected')">رفض / Reject</button>` : ""}
+      ${v.status === "approved" ? `<button onclick="download('${v.id}')">حزمة الأدلة / Evidence package</button>` : ""}
+    </section>`;
+  }));
+  list.innerHTML = html.join("") || "<p>لا توجد مخالفات / No violations</p>";
+}
+document.getElementById("status").onchange = load;
+load();
+</script>
+</body>
+</html>

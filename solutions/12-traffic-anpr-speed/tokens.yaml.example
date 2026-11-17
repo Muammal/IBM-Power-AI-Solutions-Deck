@@ -1,0 +1,7 @@
+# Copy to tokens.yaml (never commit tokens.yaml). Create entries with:
+#   cd solutions/12-traffic-anpr-speed && PYTHONPATH=../../common/python python -m vision.auth new-token <name> <role>
+# Roles: viewer (traffic statistics only) < operator < reviewer (violations, evidence) < admin
+users:
+  - name: example-reviewer
+    role: reviewer
+    sha256: 0000000000000000000000000000000000000000000000000000000000000000
