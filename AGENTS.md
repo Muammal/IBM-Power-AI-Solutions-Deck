@@ -42,6 +42,7 @@ Power Virtual Server or on-premises, using open, fine-tunable models. Shared pla
 python tools/check_repo.py                    # py_compile all Python, bash -n all scripts, required files per solution
 python tools/check_requirements.py            # resolve every requirements*.txt for ppc64le/cp312 (binary only)
 python tools/build_docx.py [solutions/NN-x]   # regenerate Word files after editing Markdown
+python tools/build_sizing_pdf.py             # regenerate docs/SIZING.pdf after changing models, defaults or sizing
 ```
 
 Then run the **Verify** block of the solution's own `AGENTS.md`.
@@ -70,3 +71,4 @@ Then run the **Verify** block of the solution's own `AGENTS.md`.
 | 2026-11-15 | Claude Code (Opus 5.5) | Created the repository: common platform layer, Solutions 02–09, Solution 01 integrated from the existing power-chatbot, compliance and model matrix, docx tooling | see "Validation status" in README.md |
 | 2026-11-16 | Claude Code (Opus 5.5) | Added Solutions 10 (CCTV weapon detection), 11 (open-source situational awareness), 12 (traffic ANPR + section speed); shared `common/python/vision/` (video, detector, tracker, evidence, store, auth, train/export/eval/benchmark); surveillance rule 8; compliance section | 26 tests pass (8 + 8 + 10) on x86; RT-DETRv2 ONNX parity 1.8e-5 (dynamo exporter); live feed run; see README validation table |
 | 2026-11-17 | Claude Code (Opus 5.5) | Solution 10 zero-shot mode (OWLv2) + window confirmation; shared vision fixes (file replay timing, fractional clip rate, `vision/zeroshot.py`) | public-video evaluation and live service run; see Solution 10 change log |
+| 2026-11-18 | Claude Code (Opus 5.5) | Sizing guide `docs/SIZING.pdf` (9 pages) generated from the capacity model `tools/sizing_model.py` (`tools/build_sizing_pdf.py`): 12 solutions × 5 scales (small/medium/large organisation, sector-wide, country-wide), best and lean profiles, HA/DR, storage, servers, sensitivity, calibration commands | model runs; every page rendered and reviewed; numbers in the text computed from the model. Planning factors are estimates, not measured on Power |

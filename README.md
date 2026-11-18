@@ -80,6 +80,9 @@ systemd services, and converting fine-tuned models to GGUF.
 
 ## Key documents
 
+* [`docs/SIZING.pdf`](docs/SIZING.pdf): **sizing guide**: cores, memory, storage, network and servers for every
+  solution, from a 300-person organisation to a country-wide programme, best-quality and lean profiles. Built from
+  the capacity model in [`tools/sizing_model.py`](tools/sizing_model.py) (`python tools/build_sizing_pdf.py`).
 * [`COMPLIANCE.md`](COMPLIANCE.md): why **CPU-only** is the default for Iraq (US EAR 3A090/4A090, Country Group D:1),
   an indicative screening of GPUs, data residency.
 * [`MODELS.md`](MODELS.md): the model matrix (licences, sizes, `transformers` compatibility), alternatives considered,
