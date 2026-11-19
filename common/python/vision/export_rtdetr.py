@@ -84,7 +84,8 @@ def main():
     onnx_path = out / "model.onnx"
     # dynamo=True (torch.export based) is REQUIRED for RT-DETRv2: the classic TorchScript exporter (dynamo=False)
     # produces a graph whose scores differ by ~0.1 from PyTorch (verified 2026-11-16, torch 2.10); the parity check
-    # below catches that. Batch size is fixed at 1: the model code uses the batch size as a Python int, so it
+    # below catches that. The exporter version matters too: onnxscript 0.5.6 also gives scores ~0.19 off, 0.7.2
+    # matches to ~5e-6 on x86 and Power10 (pinned in common/requirements-vision-train.txt). Batch size is fixed at 1: the model code uses the batch size as a Python int, so it
     # cannot be exported as dynamic. On CPU this costs nothing measurable: ONNX Runtime already spreads one frame
     # over all cores (measured: batch 4 gave the same ms/frame as batch 1).
     torch.onnx.export(Wrapper(model), (x,), str(onnx_path), input_names=["pixel_values"],

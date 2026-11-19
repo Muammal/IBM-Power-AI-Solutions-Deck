@@ -1,9 +1,15 @@
 --extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux-v2026.03.31/+simple/
 --prefer-binary
+# Rolling IBM index, ONLY for the torch/torchvision pair below (exact pins, so nothing else moves):
+--extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux/+simple/
 # Detector / OCR training and ONNX export (common/python/vision/*.py, Solutions 10 and 12). Own venv:
 #   common/scripts/make_venv.sh common/requirements-vision-train.txt /opt/venv-vision-train
-torch==2.10.0+ppc64le1
-torchvision==0.25.0+ppc64le1
+# torch + torchvision must come from the same IBM build. In the 2026.03.31 snapshot they do not match:
+# torchvision 0.25.0+ppc64le1 fails on import with torch 2.10.0+ppc64le1 ("operator torchvision::nms does not
+# exist", undefined symbol torch::autograd::_wrap_outputs). The +ppc64le2 rebuilds of both work together
+# (tested on a Power10 LPAR, 2026-11-19). Other requirement files keep torch +ppc64le1: they do not use torchvision.
+torch==2.10.0+ppc64le2
+torchvision==0.25.0+ppc64le2
 transformers==4.57.6
 tokenizers==0.22.2
 safetensors==0.7.0
@@ -15,5 +21,8 @@ pillow==12.1.1+ppc64le1
 opencv-python-headless==4.13.0.92+ppc64le1
 onnx==1.19.1+ppc64le1
 onnxruntime==1.23.1+ppc64le1
-onnxscript==0.5.6        # dynamo ONNX exporter (required for RT-DETRv2, see export_rtdetr.py)
+# dynamo ONNX exporter (required for RT-DETRv2, see export_rtdetr.py). 0.7.2, not 0.5.6: with onnxscript 0.5.6
+# the export of RT-DETRv2 is WRONG (scores off by 0.19, detections lost) on Power and x86 alike; 0.7.2 matches
+# PyTorch to 5.5e-6 on Power10 (2026-11-19). export_rtdetr.py's parity check catches this either way.
+onnxscript==0.7.2
 PyYAML==6.0.3+ppc64le1

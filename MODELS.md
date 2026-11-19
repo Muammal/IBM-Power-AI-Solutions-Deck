@@ -30,7 +30,8 @@ and handles **Arabic** where the task needs language.
 
 RT-DETRv2 (verified 2026-11-16): `rt_detr_v2` is native in transformers 4.57.6. Export it with
 `common/python/vision/export_rtdetr.py`: the classic TorchScript ONNX exporter produced scores ~0.1 off for this
-model; the dynamo exporter matches PyTorch to 1.8e-5. There is no trustworthy permissively licensed weapon or Iraqi
+model; the dynamo exporter matches PyTorch to 1.8e-5 (x86) and 5.5e-6 (Power10, 2026-11-19), but only with
+onnxscript 0.7.2: onnxscript 0.5.6 exports it with scores 0.19 off. There is no trustworthy permissively licensed weapon or Iraqi
 plate model on Hugging Face (checked 2026-11-16: small, unvetted or unlicensed checkpoints only; most plate models
 are AGPL YOLO derivatives), so Solutions 10 and 12 train their own on site data. Ultralytics YOLO (AGPL-3.0) is
 excluded by the licence rule. Zero-shot alternatives checked 2026-11-17: OmDet-Turbo (Apache-2.0) needs torchvision +
