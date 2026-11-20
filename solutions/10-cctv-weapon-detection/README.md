@@ -31,7 +31,7 @@ sensitive and must stay inside the organisation.
  rules: per-class threshold · weapon must touch a person · seen in ≥ 3 consecutive analysed frames · cooldown
         │
         ▼
- EVENT: snapshot (raw + annotated, SHA-256) · 10 s MP4 clip · hash-chained record · audit log
+ EVENT: snapshot (raw + annotated, SHA-256) · 10 s clip (H.264 MP4; VP9 WebM on Power) · hash-chained record · audit log
         │                                    │
         ├──► webhook to VMS / PSIM / SOC     ├──► e-mail with snapshot
         ▼
@@ -51,7 +51,7 @@ response to the security team.
 | Scale | motion gating, per-camera analysis fps, measured capacity (`benchmark.py`) |
 | False-alarm control | class thresholds, person-overlap rule, multi-frame confirmation, cooldown, hard-negative retraining |
 | Alerting | webhooks + e-mail with retries in a background queue, escalation, camera-offline alerts |
-| Evidence | raw + annotated snapshot, MP4 clip, SHA-256, tamper-evident hash chain (`/api/integrity`) |
+| Evidence | raw + annotated snapshot, video clip (H.264 MP4, or VP9 WebM where the PyAV build has no H.264 encoder, e.g. IBM's ppc64le wheels), SHA-256, tamper-evident hash chain (`/api/integrity`) |
 | Security | bearer tokens with roles (hashed at rest), audit of every view/review, localhost binding |
 | Operations | `/health`, Prometheus `/metrics`, systemd, retention purge, release gates for new models |
 | Tests | `tests/test_weapons.py` (rules, chain, retention, escalation, auth, review) |

@@ -36,7 +36,7 @@ operator verdicts. Runs on CPU on IBM Power.
 **Verify:**
 
 ```bash
-python -m pytest -q tests                                                     # 8 passed
+python -m pytest -q tests                                                     # 10 passed
 python ../../common/python/vision/export_rtdetr.py --model PekingU/rtdetr_v2_r18vd --out /tmp/coco   # parity OK
 python eval/false_alarm_rate.py --negatives <normal footage> --max-per-camera-hour 0.02            # gate
 ```
@@ -88,3 +88,4 @@ A text model cannot see the image, so the note relies only on context tools, nev
 |---|---|---|---|
 | 2026-11-16 | Claude Code (Opus 5.5) | Initial version: RTSP readers, motion gate, RT-DETRv2 ONNX detector, alert rules, tracking, evidence (hash chain, clips), notifications, escalation, camera-offline alerts, operator console + API with roles, retention, training/export/eval/benchmark tools, release gates | x86 CPU: `pytest` 8 passed; RT-DETRv2 export parity 1.8e-5 with the dynamo exporter (TorchScript exporter found wrong by ~0.1 and replaced); end-to-end false-alarm run on a 30 s synthetic video with the COCO baseline: 0 alerts, 3.4 s; benchmark 108 ms/frame at 8 threads. No weapon model trained (needs site data); not yet run on Power hardware |
 | 2026-11-17 | Claude Code (Opus 5.5) | Zero-shot backend (OWLv2) with its own thresholds/fps; window confirmation mode for low fps; OWLv2 square-padding box fix; file replay mapped to wall-clock time; fractional clip frame rate; console fetches each snapshot once; `.webm` support in eval; `finetune/autolabel.py` teacher | Full pipeline on 8 Wikimedia Commons videos: false alarms 0 (5.6 min, unchanged), weapon videos caught 1/5 → 3/5 after window confirmation; live service: alert, clip, confirm, audit, integrity OK; audit spam 12 rows/40 s → 1 per view; clip duration 7 s → 14 s (correct); `pytest` 9 passed |
+| 2026-11-20 | Claude Code (Opus 5.5) | Evidence clips on Power: IBM's ppc64le PyAV has no libx264 or mpeg4 encoder, so `write_clip` crashed there; `common/python/vision/video.py` now picks the first available of H.264 MP4, VP9 WebM, VP8 WebM, MPEG-4 (`clip_encoder()`), the file suffix follows the encoder, and `/api/events/{id}/clip` sends `video/webm` or `video/mp4`; new test `test_clip_writer_works_without_h264` | x86: encoder libx264, `pytest` 10 passed; Power10 LPAR: encoder libvpx-vp9, `pytest` 10 passed, 20-frame 2 fps clip decodes to 20 frames / 10.0 s |

@@ -11,6 +11,7 @@ Design choices (each one fixes a failure seen in production video systems):
 import collections
 import fractions
 import logging
+import pathlib
 import threading
 import time
 
@@ -110,15 +111,41 @@ def apply_masks(rgb, polygons):
     return out
 
 
+# Evidence clip formats, in order of preference: (encoder, container suffix, encoder options).
+# IBM's ppc64le PyAV wheels ship without H.264 (libx264) and without MPEG-4 encoders, but with VP9/VP8, so on Power
+# clips are VP9 in WebM (plays in Chrome, Edge and Firefox). x86 wheels include libx264 and keep writing H.264 MP4.
+ENCODERS = [
+    ("libx264", ".mp4", {"crf": "23", "preset": "veryfast"}),
+    ("libvpx-vp9", ".webm", {"crf": "32", "b": "0", "deadline": "realtime", "cpu-used": "8", "row-mt": "1"}),
+    ("libvpx", ".webm", {"crf": "10", "b": "1M", "deadline": "realtime", "cpu-used": "8"}),
+    ("mpeg4", ".mp4", {"qscale": "4"}),
+]
+
+
+def clip_encoder():
+    """First encoder from ENCODERS that this PyAV build can really open for writing."""
+    for name, suffix, opts in ENCODERS:
+        try:
+            av.codec.Codec(name, "w")
+            return name, suffix, opts
+        except Exception:                      # not compiled into this FFmpeg build
+            continue
+    raise RuntimeError("no video encoder for evidence clips in this PyAV build: " + ", ".join(e[0] for e in ENCODERS))
+
+
 def write_clip(frames, path, fps):
-    """Write [(ts, rgb), ...] to an H.264 MP4 (evidence clip for the operator)."""
+    """Write [(ts, rgb), ...] as an evidence clip for the operator. The file suffix follows the encoder actually used
+    (.mp4 for H.264, .webm for VP9/VP8), so callers must keep the returned path, not the one they passed in."""
     if not frames:
         return None
+    codec, suffix, opts = clip_encoder()
+    path = pathlib.Path(path).with_suffix(suffix)
     h, w = frames[0][1].shape[:2]
     with av.open(str(path), mode="w") as out:
         # Fractional rate: at 0.5 analysed fps a rounded rate of 1 would play the clip at double speed.
         rate = fractions.Fraction(fps).limit_denominator(100)
-        st = out.add_stream("libx264" if "libx264" in av.codecs_available else "mpeg4", rate=rate)
+        st = out.add_stream(codec, rate=rate)
+        st.options = opts
         st.width, st.height, st.pix_fmt = w - w % 2, h - h % 2, "yuv420p"
         for _, rgb in frames:
             fr = av.VideoFrame.from_ndarray(rgb[: st.height, : st.width], format="rgb24")

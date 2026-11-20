@@ -159,7 +159,8 @@ def create_app(store, pipe, auth):
     @app.get("/api/events/{event_id}/clip")
     def clip(event_id: str, user=Depends(viewer)):
         store.audit(user[0], "view_clip", event_id)
-        return FileResponse(media(event_id, "clip"), media_type="video/mp4")
+        path = media(event_id, "clip")                     # WebM (VP9) on Power, MP4 (H.264) where libx264 exists
+        return FileResponse(path, media_type="video/webm" if path.endswith(".webm") else "video/mp4")
 
     @app.post("/api/events/{event_id}/review")
     def review(event_id: str, body: Review, user=Depends(operator)):

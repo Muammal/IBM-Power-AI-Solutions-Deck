@@ -176,3 +176,21 @@ def test_privacy_mask_applied(cfg):
     img = np.full((100, 100, 3), 255, np.uint8)
     out = apply_masks(img, [[[0, 0], [50, 0], [50, 50], [0, 50]]])
     assert out[10, 10].sum() == 0 and out[90, 90].sum() == 765
+
+
+def test_clip_writer_works_without_h264(tmp_path, monkeypatch):
+    """IBM's ppc64le PyAV has no libx264/mpeg4 encoder: clips must fall back to VP9 WebM and stay playable."""
+    import av
+    from vision import video
+    rng = np.random.default_rng(0)
+    frames = [(i * 0.5, rng.integers(0, 255, (120, 160, 3), np.uint8)) for i in range(6)]
+
+    def decoded(path):
+        with av.open(path) as c:
+            return sum(1 for _ in c.decode(video=0))
+
+    default = video.write_clip(frames, tmp_path / "default.mp4", 2.0)   # whatever this machine has (H.264 on x86)
+    assert pathlib.Path(default).exists() and decoded(default) == len(frames)
+    monkeypatch.setattr(video, "ENCODERS", [e for e in video.ENCODERS if e[0] == "libvpx-vp9"])
+    webm = video.write_clip(frames, tmp_path / "power.mp4", 2.0)      # what a Power server writes
+    assert webm.endswith(".webm") and decoded(webm) == len(frames)
