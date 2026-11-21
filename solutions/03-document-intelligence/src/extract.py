@@ -24,6 +24,9 @@ SYSTEM = """You extract data from business documents (Arabic or English, often O
 Rules:
 - Copy names exactly as written (keep Arabic names in Arabic script).
 - Dates as YYYY-MM-DD. Numbers as plain numbers without thousands separators.
+- Copy every amount exactly as printed, even if the arithmetic looks wrong. Never recompute or correct a number:
+  the validation step checks the arithmetic and sends wrong documents to a human.
+- subtotal is the amount printed before tax (e.g. "المجموع", "Subtotal"); total is the final amount due.
 - Currency: "دينار"/"د.ع"/"IQD" -> IQD; "$"/"دولار"/"USD" -> USD.
 - If a field is not present, use null. Never guess values that are not in the text."""
 
